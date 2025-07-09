@@ -12,6 +12,7 @@ import Combine
 import SDWebImage
 
 protocol StickerPackCollectionVCDelegate: AnyObject {
+    
     func fetchSticker(from urls: [String])
 }
 
@@ -122,72 +123,81 @@ class StickerPackCollectionVC: UICollectionViewController, UICollectionViewDeleg
     }
     
     override func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
-        /*
-         SVProgressHUD.show(withStatus: "Loading...")
-         self.view.isUserInteractionEnabled = false
-         var stickerFileUrl: URL = URL(fileURLWithPath: "")
-         if let sticker = stickerItem {
-         let stickerLocalURL = SMFileManager.shared.getFileURL(for: "Stickers/\(sticker.code)/\(sticker.stickers[indexPath.row])")!
-         
-         if !SMFileManager.shared.isFileExists(at: stickerLocalURL.path) && Reachability.shared.connection == .unavailable {
-         DispatchQueue.main.async {
-         SVProgressHUD.dismiss()
-         //  BFToast.show(inViewCenter: "Make sure you have internet connection and try again.", after: 0.0, delay: 0.0, disappeared: nil)
-         self.view.isUserInteractionEnabled = true
-         }
-         return
-         }
-         stickerFileUrl = stickerLocalURL
-         
-         } else if type == .myPack, let sticker = stickerInfo[indexPath.row].sticker {
-         stickerFileUrl = SMFileManager.shared.getFilePathForGroup(with: sticker)!
-         } else {
-         SVProgressHUD.dismiss()
-         // BFToast.show(inViewCenter: "Make sure you have internet connection and try again.", after: 0.0, delay: 0.0, disappeared: nil)
-         self.view.isUserInteractionEnabled = true
-         return
-         }
-         var imageArray: [String] = []
-         if let data = try? Data(contentsOf: stickerFileUrl), let image = YYImage(data: data) {
-         let frameCount = Double(image.animatedImageFrameCount())
-         if frameCount > 0 {
-         let interval = frameCount > 30.0 ? ceil(frameCount / 30.0) : 1
-         let folder = FileManager.default.createFolderInTemporary(with: "stickerMaker-\(UUID().uuidString)")
-         for i in stride(from: 0, to: frameCount, by: interval) {
-         if let frame = image.animatedImageFrame(at: UInt(i)) {
-         let url = FileManager.default.getImageURL(for: "image_\(UUID().uuidString).png", folder: folder)
-         do {
-         if let resizedFrame = frame.resize512() {
-         try resizedFrame.writePNG(to: url, shouldResize: false)
-         imageArray.append(url.path)
-         }
-         } catch {
-         print(error)
-         }
-         }
-         }
-         } else {
-         do {
-         let folder = FileManager.default.createFolderInTemporary(with: "stickerMaker-\(UUID().uuidString)")
-         let url = FileManager.default.getImageURL(for: "image_\(UUID().uuidString).png", folder: folder)
-         try image.writePNG(to: url, shouldResize: false)
-         imageArray = [url.path]
-         } catch {
-         print(error)
-         }
-         }
-         }
-         guard imageArray.count > 0 else {
-         SVProgressHUD.dismiss()
-         // BFToast.show(inViewCenter: "Make sure you have internet connection and try again.", after: 0.0, delay: 0.0, disappeared: nil)
-         self.view.isUserInteractionEnabled = true
-         return
-         }
-         DispatchQueue.main.async {
-         self.delegate?.fetchSticker(from: imageArray)
-         }
-         
-         */
+        
+        switch type {
+        case .giphy:
+            break
+        default:
+            break
+        }
+        
+        SVProgressHUD.show(withStatus: "Loading...")
+        self.view.isUserInteractionEnabled = false
+        
+        var stickerFileUrl: URL = URL(fileURLWithPath: "")
+        if let sticker = stickerItem {
+            let stickerLocalURL = SMFileManager.shared.getFileURL(for: "Stickers/\(sticker.code)/\(sticker.stickers[indexPath.row])")!
+            
+            if !SMFileManager.shared.isFileExists(at: stickerLocalURL.path) && Reachability.shared.connection == .unavailable {
+                DispatchQueue.main.async {
+                    SVProgressHUD.dismiss()
+                    //  BFToast.show(inViewCenter: "Make sure you have internet connection and try again.", after: 0.0, delay: 0.0, disappeared: nil)
+                    self.view.isUserInteractionEnabled = true
+                }
+                return
+            }
+            stickerFileUrl = stickerLocalURL
+            
+        }
+//        else if type == .giphy, let sticker = stickerInfo[indexPath.row].sticker {
+//            stickerFileUrl = SMFileManager.shared.getFilePathForGroup(with: sticker)!
+//        } else {
+//            SVProgressHUD.dismiss()
+//            // BFToast.show(inViewCenter: "Make sure you have internet connection and try again.", after: 0.0, delay: 0.0, disappeared: nil)
+//            self.view.isUserInteractionEnabled = true
+//            return
+//        }
+//        var imageArray: [String] = []
+//        if let data = try? Data(contentsOf: stickerFileUrl), let image = YYImage(data: data) {
+//            let frameCount = Double(image.animatedImageFrameCount())
+//            if frameCount > 0 {
+//                let interval = frameCount > 30.0 ? ceil(frameCount / 30.0) : 1
+//                let folder = FileManager.default.createFolderInTemporary(with: "stickerMaker-\(UUID().uuidString)")
+//                for i in stride(from: 0, to: frameCount, by: interval) {
+//                    if let frame = image.animatedImageFrame(at: UInt(i)) {
+//                        let url = FileManager.default.getImageURL(for: "image_\(UUID().uuidString).png", folder: folder)
+//                        do {
+//                            if let resizedFrame = frame.resize512() {
+//                                try resizedFrame.writePNG(to: url, shouldResize: false)
+//                                imageArray.append(url.path)
+//                            }
+//                        } catch {
+//                            print(error)
+//                        }
+//                    }
+//                }
+//            } else {
+//                do {
+//                    let folder = FileManager.default.createFolderInTemporary(with: "stickerMaker-\(UUID().uuidString)")
+//                    let url = FileManager.default.getImageURL(for: "image_\(UUID().uuidString).png", folder: folder)
+//                    try image.writePNG(to: url, shouldResize: false)
+//                    imageArray = [url.path]
+//                } catch {
+//                    print(error)
+//                }
+//            }
+//        }
+//        guard imageArray.count > 0 else {
+//            SVProgressHUD.dismiss()
+//            // BFToast.show(inViewCenter: "Make sure you have internet connection and try again.", after: 0.0, delay: 0.0, disappeared: nil)
+//            self.view.isUserInteractionEnabled = true
+//            return
+//        }
+//        DispatchQueue.main.async {
+//            self.delegate?.fetchSticker(from: imageArray)
+//        }
+        
+        
     }
     
     func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {

@@ -131,7 +131,7 @@
                                                                             <nil key="highlightedColor"/>
                                                                         </label>
                                                                         <view clipsSubviews="YES" contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="IzR-9X-DEc">
-                                                                            <rect key="frame" x="52.333333333333336" y="4" width="4" height="4"/>
+                                                                            <rect key="frame" x="56.333333333333336" y="4" width="4" height="4"/>
                                                                             <color key="backgroundColor" red="1" green="0.58431372549019611" blue="0.0" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
                                                                             <constraints>
                                                                                 <constraint firstAttribute="height" constant="4" id="On5-am-euw"/>
@@ -150,7 +150,7 @@
                                                                         <constraint firstItem="OSx-L3-RK5" firstAttribute="top" secondItem="q9G-1k-HPI" secondAttribute="top" id="atn-sk-dpe"/>
                                                                         <constraint firstItem="IzR-9X-DEc" firstAttribute="top" secondItem="q9G-1k-HPI" secondAttribute="top" constant="4" id="dYA-rj-gch"/>
                                                                         <constraint firstItem="kG9-e7-7BD" firstAttribute="leading" secondItem="q9G-1k-HPI" secondAttribute="leading" constant="15" id="k3Q-aS-PgM"/>
-                                                                        <constraint firstAttribute="trailing" secondItem="IzR-9X-DEc" secondAttribute="trailing" constant="8" id="kP1-Zf-mwL"/>
+                                                                        <constraint firstAttribute="trailing" secondItem="IzR-9X-DEc" secondAttribute="trailing" constant="4" id="kP1-Zf-mwL"/>
                                                                         <constraint firstAttribute="bottom" secondItem="kG9-e7-7BD" secondAttribute="bottom" constant="7" id="olD-SG-TwB"/>
                                                                         <constraint firstAttribute="bottom" secondItem="OSx-L3-RK5" secondAttribute="bottom" id="qWE-Ol-AfL"/>
                                                                         <constraint firstItem="OSx-L3-RK5" firstAttribute="leading" secondItem="q9G-1k-HPI" secondAttribute="leading" constant="4" id="waI-V8-9Ga"/>
@@ -188,7 +188,7 @@
                                             </view>
                                             <containerView opaque="NO" contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="9Kp-W4-eqd">
                                                 <rect key="frame" x="0.0" y="44" width="414" height="679"/>
-                                                <color key="backgroundColor" red="0.1803921568627451" green="0.1803921568627451" blue="0.1803921568627451" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+                                                <color key="backgroundColor" red="0.078431372549019607" green="0.078431372549019607" blue="0.078431372549019607" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
                                                 <connections>
                                                     <segue destination="B3Y-aT-D9R" kind="embed" identifier="PageVC" id="kuh-sZ-9TC"/>
                                                 </connections>

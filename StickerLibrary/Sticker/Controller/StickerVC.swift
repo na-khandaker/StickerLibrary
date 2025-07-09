@@ -253,6 +253,7 @@ extension StickerVC: UICollectionViewDataSource, UICollectionViewDelegate {
              */
             cell.showProIcon(isPro: false)
         default :
+            print("ISSS PROOOO >>> ",stickerCollections[indexPath.row].isPro)
             cell.showProIcon(isPro: stickerCollections[indexPath.row].isPro)
             cell.categoryNameLabel.text = stickerCollections[indexPath.row].name.uppercased()
         }
