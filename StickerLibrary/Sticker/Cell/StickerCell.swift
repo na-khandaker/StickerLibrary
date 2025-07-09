@@ -78,11 +78,12 @@ class StickerCell: UICollectionViewCell {
         guard let url = giphyGIFModelInfo.images?.previewGIF?.url else { return }
         
         self.imageView.sd_setImage(with: URL(string: url), placeholderImage: nil) { image , error , cacheType , imageURL in
-            self.stickerLoadingIndicator?.stopAnimating()
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.01) {
+                self.stickerLoadingIndicator?.stopAnimating()
+            }
             self.imageView.image = image
             self.imageView.startAnimating()
         }
-        print("cell load : ",giphyGIFModelInfo.id)
     }
     
     func configureCell(with code: String, and stickerPath : String, isAnimating: Bool) {

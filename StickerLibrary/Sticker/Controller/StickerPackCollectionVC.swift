@@ -128,27 +128,27 @@ class StickerPackCollectionVC: UICollectionViewController, UICollectionViewDeleg
         case .giphy:
             break
         default:
-            break
-        }
-        
-        SVProgressHUD.show(withStatus: "Loading...")
-        self.view.isUserInteractionEnabled = false
-        
-        var stickerFileUrl: URL = URL(fileURLWithPath: "")
-        if let sticker = stickerItem {
-            let stickerLocalURL = SMFileManager.shared.getFileURL(for: "Stickers/\(sticker.code)/\(sticker.stickers[indexPath.row])")!
+            SVProgressHUD.show(withStatus: "Loading...")
+            self.view.isUserInteractionEnabled = false
             
-            if !SMFileManager.shared.isFileExists(at: stickerLocalURL.path) && Reachability.shared.connection == .unavailable {
-                DispatchQueue.main.async {
-                    SVProgressHUD.dismiss()
-                    //  BFToast.show(inViewCenter: "Make sure you have internet connection and try again.", after: 0.0, delay: 0.0, disappeared: nil)
-                    self.view.isUserInteractionEnabled = true
+            var stickerFileUrl: URL = URL(fileURLWithPath: "")
+            if let sticker = stickerItem {
+                let stickerLocalURL = SMFileManager.shared.getFileURL(for: "Stickers/\(sticker.code)/\(sticker.stickers[indexPath.row])")!
+                
+                if !SMFileManager.shared.isFileExists(at: stickerLocalURL.path) && Reachability.shared.connection == .unavailable {
+                    DispatchQueue.main.async {
+                        SVProgressHUD.dismiss()
+                        //  BFToast.show(inViewCenter: "Make sure you have internet connection and try again.", after: 0.0, delay: 0.0, disappeared: nil)
+                        self.view.isUserInteractionEnabled = true
+                    }
+                    return
                 }
-                return
+                stickerFileUrl = stickerLocalURL
+                
             }
-            stickerFileUrl = stickerLocalURL
-            
         }
+        
+
 //        else if type == .giphy, let sticker = stickerInfo[indexPath.row].sticker {
 //            stickerFileUrl = SMFileManager.shared.getFilePathForGroup(with: sticker)!
 //        } else {
