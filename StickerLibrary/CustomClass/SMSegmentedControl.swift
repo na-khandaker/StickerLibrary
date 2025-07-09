@@ -32,43 +32,43 @@ class SMSegmentedControl: UIView {
         }
     }
     
-    @IBInspectable var currentIndexTitleColor: UIColor = .red {
+    @IBInspectable var currentIndexTitleColor: UIColor = UIColor(hexaString: "#FF9500") {
         didSet {
             updateTextColors()
         }
     }
     
-    @IBInspectable var currentIndexBackgroundColor: UIColor = .green {
+    @IBInspectable var currentIndexBackgroundColor: UIColor =  UIColor(hexaString: "#2E2E2E") {
         didSet {
             setCurrentViewBackgroundColor()
         }
     }
     
-    @IBInspectable var otherIndexTitleColor: UIColor = .blue {
+    @IBInspectable var otherIndexTitleColor: UIColor = UIColor(hexaString: "#808080") {
         didSet {
             updateTextColors()
         }
     }
     
-    @IBInspectable var cornerRadius: CGFloat = 20 {
+    @IBInspectable var cornerRadius: CGFloat = 4 {
         didSet {
             setCornerRadius()
         }
     }
     
-    @IBInspectable var buttonCornerRadius: CGFloat = 20 {
+    @IBInspectable var buttonCornerRadius: CGFloat = 4 {
         didSet {
             setButtonCornerRadius()
         }
     }
     
-    @IBInspectable var borderColor: UIColor = .systemTeal {
+    @IBInspectable var borderColor: UIColor =  UIColor(hexaString: "#2E2E2E") {
         didSet {
             setBorderColor()
         }
     }
     
-    @IBInspectable var borderWidth: CGFloat = 0 {
+    @IBInspectable var borderWidth: CGFloat = 1 {
         didSet {
             setBorderWidth()
         }
@@ -107,9 +107,9 @@ class SMSegmentedControl: UIView {
     
     //MARK: - Functions
     private func commonInit() {
-        backgroundColor = .gray
-        buttonCornerRadius = self.frame.height / 2.0
-        cornerRadius = (self.frame.height - buttonPadding * 2) / 2.0
+        backgroundColor = UIColor(hexaString: "#1F1F1F")
+//        buttonCornerRadius = self.frame.height / 2.0
+//        cornerRadius = (self.frame.height - buttonPadding * 2) / 2.0
         setupStackView()
         addSegments()
         setCurrentIndexView()

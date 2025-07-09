@@ -66,9 +66,9 @@ class StickerCell: UICollectionViewCell {
     }
     
     func commonInit() {
-        self.layer.cornerRadius = 14
-        self.layer.borderColor = UIColor.red.cgColor
-        self.layer.borderWidth = 0.5
+//        self.layer.cornerRadius = 14
+//        self.layer.borderColor = UIColor.red.cgColor
+//        self.layer.borderWidth = 0.5
     }
     
     func configureCellForGIFY(with giphyGIFModelInfo: GiphyGIFModel, isAnimated: Bool) {

@@ -56,7 +56,7 @@ class StickerVC: UIViewController, SMSegmentedControlDelegate {
         
         if isVideo {
             segmentControlView.numberOfSegments = 3
-            segmentControlView.segmentsTitle = "Static,Animated,MyPack"
+            segmentControlView.segmentsTitle = "STATIC,ANIMATED,GIPHY"
             segmentControlWidthConstraint.constant = 300
         } else {
             segmentControlView.numberOfSegments = 2
@@ -165,7 +165,7 @@ class StickerVC: UIViewController, SMSegmentedControlDelegate {
             switch self.selectedType {
             case .giphy:
                 if self.gifyList.count > 0 {
-//                    self.stickerCategoryCollectionView.selectItem(at: IndexPath(row: selection, section: 0), animated: false, scrollPosition: .centeredHorizontally)
+                    self.stickerCategoryCollectionView.selectItem(at: IndexPath(row: selection, section: 0), animated: false, scrollPosition: .centeredHorizontally)
                 }
             default:
                 if self.stickerCollections.count > 0 {
@@ -237,7 +237,7 @@ extension StickerVC: UICollectionViewDataSource, UICollectionViewDelegate {
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
         switch selectedType {
         case .giphy:
-            return 0
+            return gifyList.count
         default :
             return stickerCollections.count
         }
@@ -251,8 +251,10 @@ extension StickerVC: UICollectionViewDataSource, UICollectionViewDelegate {
             /*
             cell.categoryNameLabel.text = packInfo[indexPath.row].packName
              */
+            cell.showProIcon(isPro: false)
         default :
-            cell.categoryNameLabel.text = stickerCollections[indexPath.row].name
+            cell.showProIcon(isPro: stickerCollections[indexPath.row].isPro)
+            cell.categoryNameLabel.text = stickerCollections[indexPath.row].name.uppercased()
         }
         return cell
     }
