@@ -6,6 +6,7 @@
 //
 
 import UIKit
+import SVProgressHUD
 
 @objc
 protocol SMDismissViewControllerProtocol{
@@ -45,7 +46,7 @@ class StickerVC: UIViewController, SMSegmentedControlDelegate {
     private var currentSelected: Int = 0
     private var staticStickerSelected: Int = 0
     private var animatedStickerSelected: Int = 0
-    private var myPackStickerSelected: Int = 0
+    private var giphyStickerSelected: Int = 0
     
     weak var stickerPageViewController: StickerPageViewController?
     
@@ -181,7 +182,7 @@ class StickerVC: UIViewController, SMSegmentedControlDelegate {
         case .animatedSticker:
             selection = animatedStickerSelected
         case .giphy:
-            selection = myPackStickerSelected
+            selection = giphyStickerSelected
         }
         
         self.currentSelected = selection
@@ -293,10 +294,27 @@ extension StickerVC: UICollectionViewDataSource, UICollectionViewDelegate {
         case .animatedSticker:
             animatedStickerSelected = indexPath.row
         case .giphy:
-            myPackStickerSelected = indexPath.row
+            giphyStickerSelected = indexPath.row
         }
         collectionView.scrollToItem(at: indexPath, at: .centeredHorizontally, animated: true)
-        stickerPageViewController?.jumpToPage(at: indexPath.row)
+        
+        if selectedType == .giphy {
+            if let keyword = ghipyCategories[giphyStickerSelected].name {
+                SVProgressHUD.show(withStatus: "requesting")
+                GiphyAPIManager.shared.searchGiphy(searchKeyWord: keyword) { giphyList in
+                    self.gifyList = giphyList
+                    self.stickerPageViewController?.gifyList = self.gifyList
+                    DispatchQueue.main.async {
+                        SVProgressHUD.dismiss()
+                        self.stickerPageViewController?.jumpToPage(at: indexPath.row)
+                    }
+                } error: { error in
+                    
+                }
+            }
+        } else {
+            stickerPageViewController?.jumpToPage(at: indexPath.row)
+        }
     }
 }
 
@@ -344,7 +362,7 @@ extension StickerVC: StickerPageViewControllerDelegate {
         case .animatedSticker:
             animatedStickerSelected = index
         case .giphy:
-            myPackStickerSelected = index
+            giphyStickerSelected = index
         }
         stickerCategoryCollectionView.selectItem(at: IndexPath(row: index, section: 0), animated: true, scrollPosition: .centeredHorizontally)
     }

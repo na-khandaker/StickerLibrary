@@ -44,9 +44,9 @@ struct GiphyCategoryResponse: Codable {
 
 // MARK: - Datum
 struct GiphyCategory: Codable {
-    let name, nameEncoded: String
-    let subcategories: [Subcategory]
-    let gif: GiphyObject
+    let name, nameEncoded: String?
+    let subcategories: [Subcategory]?
+    let gif: GiphyObject?
 
     enum CodingKeys: String, CodingKey {
         case name

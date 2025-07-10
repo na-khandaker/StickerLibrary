@@ -4,7 +4,7 @@
 //
 //  Created by BCL-Device-11 on 10/7/25.
 //
-
+import UIKit
 
 class CustomSegmentedControl: UISegmentedControl{
     private let segmentInset: CGFloat = 2       //your inset amount

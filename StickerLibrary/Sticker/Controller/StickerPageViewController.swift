@@ -73,13 +73,11 @@ class StickerPageViewController: UIPageViewController {
             }
 
         }
-        
         pageContentViewController.delegate = self
         pageContentViewController.itemIndex = index
         pageContentViewController.type = type
         if type == .giphy {
             pageContentViewController.gifyList = gifyList
-             
         }  else {
             pageContentViewController.stickerItem = animatedStickers[index]
         }
@@ -97,7 +95,6 @@ extension StickerPageViewController: UIPageViewControllerDataSource, UIPageViewC
         switch type {
             
             case .giphy:
-            return 0
                 return gifyList.count == 0 ? 1 : gifyList.count
            default:
             return animatedStickers.count == 0 ? 1 : animatedStickers.count
