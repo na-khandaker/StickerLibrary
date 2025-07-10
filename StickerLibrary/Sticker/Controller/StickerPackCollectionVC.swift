@@ -11,9 +11,15 @@ import SVProgressHUD
 import Combine
 import SDWebImage
 
+enum GiphyDownloadError: Error {
+    case invalidURL
+    case downloadFailed
+    case unknown
+}
+
 protocol StickerPackCollectionVCDelegate: AnyObject {
     
-    func fetchSticker(from urls: [String])
+    func didSelectStickerItem(with stickerImage: UIImage, url: URL, isAnimated: Bool)
 }
 
 class StickerPackCollectionVC: UICollectionViewController, UICollectionViewDelegateFlowLayout {
@@ -56,13 +62,13 @@ class StickerPackCollectionVC: UICollectionViewController, UICollectionViewDeleg
             guard let self else { return }
             if type != .giphy {
                 if shouldShowNoInterNetAlert(for: type) {
-                    //  BFToast.show(inViewCenter: "Make sure you have internet connection and try again.", after: 0.0, delay: 0.0, disappeared: nil)
+                      BFToast.show(inViewCenter: "Make sure you have internet connection and try again.", after: 0.0, delay: 0.0, disappeared: nil)
                 }
             }
         }
         
         if shouldShowNoInterNetAlert(for: type) && Reachability.shared.connection == .unavailable  {
-            //  BFToast.show(inViewCenter: "Make sure you have internet connection and try again.", after: 0.0, delay: 0.0, disappeared: nil)
+             BFToast.show(inViewCenter: "Make sure you have internet connection and try again.", after: 0.0, delay: 0.0, disappeared: nil)
         }
         
         Reachability.shared.whenReachable = { [weak self] _ in
@@ -117,37 +123,63 @@ class StickerPackCollectionVC: UICollectionViewController, UICollectionViewDeleg
         }
         else if type == .giphy {
             cell.configureCellForGIFY(with: gifyList[indexPath.row], isAnimated: true)
-            print("cell load : ",indexPath.row,gifyList[indexPath.row].id)
         }
         return cell
     }
     
     override func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
-        
+        var stickerFileUrl: URL = URL(fileURLWithPath: "")
+        var isAnimated = true
+       
         switch type {
         case .giphy:
-            break
-        default:
-            SVProgressHUD.show(withStatus: "Loading...")
-            self.view.isUserInteractionEnabled = false
             
-            var stickerFileUrl: URL = URL(fileURLWithPath: "")
+            guard let path = gifyList[indexPath.row].images?.original?.url else { return }
+            let stickerLocalURL = SMFileManager.shared.getFileURL(for: "Stickers/Giphy\(path)")!
+            
+            if !SMFileManager.shared.isFileExists(at: stickerLocalURL.path) && Reachability.shared.connection == .unavailable {
+                BFToast.show(inViewCenter: "Make sure you have internet connection and try again.", after: 0.0, delay: 0.0, disappeared: nil)
+                return
+            }
+            if let url = URL(string: path) {
+                SVProgressHUD.show(withStatus: "Loading...")
+                
+                downloadGhipy(from: url) { retsult in
+                   
+                    switch retsult {
+                        
+                    case .success(let url):
+                        DispatchQueue.main.async {
+                            SVProgressHUD.dismiss()
+                            stickerFileUrl = url
+                            self.delegate?.didSelectStickerItem(with: UIImage(contentsOfFile: stickerFileUrl.path)!, url: stickerFileUrl, isAnimated: isAnimated)
+                        }
+                    case .failure(let error):
+                        DispatchQueue.main.async {
+                            SVProgressHUD.dismiss()
+                            BFToast.show(inViewCenter: "\(error.localizedDescription)", after: 0.0, delay: 0.0, disappeared: nil)
+                            return
+                        }
+                    }
+                }
+            }
+            
+        default:
             if let sticker = stickerItem {
+                isAnimated = sticker.isAnimated
                 let stickerLocalURL = SMFileManager.shared.getFileURL(for: "Stickers/\(sticker.code)/\(sticker.stickers[indexPath.row])")!
                 
                 if !SMFileManager.shared.isFileExists(at: stickerLocalURL.path) && Reachability.shared.connection == .unavailable {
                     DispatchQueue.main.async {
-                        SVProgressHUD.dismiss()
-                        //  BFToast.show(inViewCenter: "Make sure you have internet connection and try again.", after: 0.0, delay: 0.0, disappeared: nil)
-                        self.view.isUserInteractionEnabled = true
+                          BFToast.show(inViewCenter: "Make sure you have internet connection and try again.", after: 0.0, delay: 0.0, disappeared: nil)
                     }
                     return
                 }
                 stickerFileUrl = stickerLocalURL
-                
+                self.delegate?.didSelectStickerItem(with: UIImage(contentsOfFile: stickerFileUrl.path)!, url: stickerFileUrl, isAnimated: isAnimated)
             }
         }
-        
+//        self.delegate?.didSelectStickerItem(with: UIImage(contentsOfFile: stickerFileUrl.path)!, url: stickerFileUrl, isAnimated: isAnimated)
 
 //        else if type == .giphy, let sticker = stickerInfo[indexPath.row].sticker {
 //            stickerFileUrl = SMFileManager.shared.getFilePathForGroup(with: sticker)!
@@ -224,16 +256,25 @@ class StickerPackCollectionVC: UICollectionViewController, UICollectionViewDeleg
         }
     }
     
-    //    override func collectionView(_ collectionView: UICollectionView, willDisplay cell: UICollectionViewCell, forItemAt indexPath: IndexPath) {
-    //        guard type == .myPack else { return }
-    //            if collectionView == containerCollectionView,
-    //                sticketItemType == .gif,
-    //                indexPath.row == gifDataSource.count - 10{
-    //                self.nextPageGiphy()
-    //                print(#function)
-    //            }
-    //        }
-    
+    func downloadGhipy(from giphyURL: URL,completion: @escaping (Result<URL, Error>) -> Void) {
+        
+        let url = SMFileManager.shared.getFileURL(for: "Stickers/Giphy")!
+        let _ = SMFileManager.shared.createNewFolder(folderName: "", at: url)
+        
+        print("REquest url >> ",giphyURL)
+        FileDownloader.loadFileAsync(url: giphyURL, folderName: "Giphy") { [weak self] downloadedUrl, error in
+            if error == nil {
+                DispatchQueue.main.async {
+                    if let urlString = downloadedUrl, let url = URL(string: urlString)  {
+                        completion(.success(url))
+                    }
+                }
+            } else {
+                completion(.failure(error ?? GiphyDownloadError.downloadFailed))
+            }
+        }
+        
+    }
     
     func nextPageGiphy(){
         guard !isProcessing else{return}

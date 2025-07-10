@@ -10,6 +10,7 @@ import UIKit
 protocol StickerPageViewControllerDelegate: AnyObject {
     func selectStickerCategoryItem(at index: Int)
     func getSticker(from stickerURLs: [String])
+    func didSelectStickerItem(withImage image: UIImage, url: URL, isAnimated: Bool)
 }
 
 class StickerPageViewController: UIPageViewController {
@@ -38,7 +39,7 @@ class StickerPageViewController: UIPageViewController {
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
         if Reachability.shared.connection == .unavailable {
-            //BFToast.show(inViewCenter: "Make sure you have internet connection and try again.", after: 0.0, delay: 1.0, disappeared: nil)
+            BFToast.show(inViewCenter: "Make sure you have internet connection and try again.", after: 0.0, delay: 1.0, disappeared: nil)
         }
     }
     
@@ -176,6 +177,10 @@ extension StickerPageViewController: UIPageViewControllerDataSource, UIPageViewC
 //MARK: - StickerPackCollectionVCDelegate
 
 extension StickerPageViewController: StickerPackCollectionVCDelegate {
+    func didSelectStickerItem(with stickerImage: UIImage, url: URL, isAnimated: Bool) {
+        self.pageDelegate?.didSelectStickerItem(withImage: stickerImage, url: url, isAnimated: true)
+    }
+    
     func fetchSticker(from urls: [String]) {
         pageDelegate?.getSticker(from: urls)
     }

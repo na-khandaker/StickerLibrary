@@ -48,7 +48,7 @@ class FileDownloader {
         
         let stickerFileUrl = SMFileManager.shared.getFileURL(for: "Stickers/\(folderName)/\(url.lastPathComponent)")!
         let destinationUrl = stickerFileUrl
-        //let destinatiurl    Foundation.URL    "http://gph.is/1bBLqrB"    onUrl = documentsUrl.appendingPathComponent(url.lastPathComponent)
+
         print("destinationUrl",destinationUrl)
         if FileManager().fileExists(atPath: destinationUrl.path)
         {

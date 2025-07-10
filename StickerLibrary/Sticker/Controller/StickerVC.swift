@@ -14,6 +14,7 @@ protocol SMDismissViewControllerProtocol{
 
 protocol StickerVCDelegate: AnyObject,SMDismissViewControllerProtocol {
     func addSticker(from stickerURLs: [String], controller: StickerVC)
+    func didSelectStickerItem(with stickerImage: UIImage, url: URL, isAnimated: Bool)
 }
 
 enum StickerVCTypeState: String {
@@ -304,6 +305,12 @@ extension StickerVC: UICollectionViewDelegateFlowLayout {
 
 
 extension StickerVC: StickerPageViewControllerDelegate {
+    func didSelectStickerItem(withImage image: UIImage, url: URL, isAnimated: Bool) {
+        self.dismiss(animated: true) {
+            self.delegate?.didSelectStickerItem(with: image, url: url, isAnimated: isAnimated)
+        }
+    }
+    
     func getSticker(from stickerURLs: [String]) {
         self.delegate?.addSticker(from: stickerURLs, controller: self)
     }
