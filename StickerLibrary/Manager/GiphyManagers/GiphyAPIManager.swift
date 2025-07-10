@@ -154,4 +154,50 @@ final class GiphyAPIManager {
                 self.latestComplete?(validGIFs)
             })
     }
+    
+//    @available(iOSApplicationExtension 13.0, *)
+//    func fetchGIFCategories(
+//        complete: @escaping ([GiphyCategory]) -> Void,
+//        error: @escaping (String) -> Void
+//    ) {
+//        apiService.fetchGIFCategories()
+//            .receive(on: DispatchQueue.main)
+//            .sink(receiveCompletion: { completionResult in
+//                if case let .failure(err) = completionResult {
+//                    error(err.localizedDescription)
+//                }
+//            }, receiveValue: { result in
+//                complete(result.data ?? [])
+//            })
+//            .store(in: &cancellables)
+//    }
+
+    
+    @available(iOSApplicationExtension 13.0, *)
+    func fetchGIFCategories(
+        complete: @escaping ([GiphyCategory]) -> Void,
+        error: @escaping (String) -> Void
+    ) {
+        apiService.fetchGIFCategories()
+            .receive(on: DispatchQueue.main)
+            .sink(receiveCompletion: { completionResult in
+                if case let .failure(err) = completionResult {
+                    error(err.localizedDescription)
+                }
+            }, receiveValue: { result in
+                let categories = result.data ?? []
+                
+                // Encode and store in UserDefaults
+                do {
+                    let encoded = try JSONEncoder().encode(categories)
+                    UserDefaults.standard.set(encoded, forKey: "GIF_CATEGORIES")
+                } catch {
+                    print("Failed to encode categories:", error)
+                }
+                
+                complete(categories)
+            })
+            .store(in: &cancellables)
+    }
+
 }

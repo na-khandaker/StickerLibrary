@@ -20,6 +20,13 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         } error: { message in
             
         }
+        
+        GiphyAPIManager.shared.fetchGIFCategories { categories in
+            print("fetchGIFCategories >>",categories.count)
+        } error: { error in
+            print(error)
+        }
+
         return true
     }
 

@@ -26,6 +26,7 @@ class GiphyAPIService: NSObject {
     private let BASE_URL_STICKERS = "https://api.giphy.com/v1/sticker"
     private let BASE_URL_EMOJI = "https://api.giphy.com/v1/emoji"
     private let BASE_URL_TEXTS = "https://api.giphy.com/v1/text"
+    private let BASE_URL_CATEGORIES = "api.giphy.com/v1/gifs/categories"
     
     private var tendingSearchKeywordURL : String{
         return "https://api.giphy.com/v1/trending/searches"
@@ -122,4 +123,26 @@ class GiphyAPIService: NSObject {
             .receive(on: DispatchQueue.main) // Ensure updates happen on the main thread
             .eraseToAnyPublisher() // Erase publisher type
     }
+    
+    @available(iOSApplicationExtension 13.0, *)
+    func fetchGIFCategories() -> AnyPublisher<GiphyResponseModel<GiphyCategory>, Error> {
+        guard var components = URLComponents(string: "https://api.giphy.com/v1/gifs/categories") else {
+            return Fail(error: URLError(.badURL)).eraseToAnyPublisher()
+        }
+        
+        components.queryItems = [
+            URLQueryItem(name: "api_key", value: API_KEY)
+        ]
+        
+        guard let url = components.url else {
+            return Fail(error: URLError(.badURL)).eraseToAnyPublisher()
+        }
+        
+        return URLSession.shared.dataTaskPublisher(for: url)
+            .map(\.data)
+            .decode(type: GiphyResponseModel<GiphyCategory>.self, decoder: JSONDecoder())
+            .receive(on: DispatchQueue.main)
+            .eraseToAnyPublisher()
+    }
+
 }

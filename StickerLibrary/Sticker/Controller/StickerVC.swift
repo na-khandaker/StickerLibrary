@@ -38,6 +38,7 @@ class StickerVC: UIViewController, SMSegmentedControlDelegate {
     var stickerObject: StickerPackResponse?
     var stickerCollections: [StickerItem] = []
     var gifyList: [GiphyGIFModel] = []
+    var ghipyCategories: [GiphyCategory] = []
     
     var selectedType: StickerVCTypeState = .sticker
     
@@ -55,18 +56,15 @@ class StickerVC: UIViewController, SMSegmentedControlDelegate {
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        if isVideo {
-            segmentControlView.numberOfSegments = 3
-            segmentControlView.segmentsTitle = "STATIC,ANIMATED,GIPHY"
-            segmentControlWidthConstraint.constant = 300
-        } else {
-            segmentControlView.numberOfSegments = 2
-            segmentControlView.segmentsTitle = "Static,MyPack"
-            segmentControlWidthConstraint.constant = 200
-        }
+        configureGhipyCategory()
+        
+        segmentControlView.numberOfSegments = 3
+        segmentControlView.segmentsTitle = "STATIC,ANIMATED,GIPHY"
+        segmentControlWidthConstraint.constant = 300
+        
         
         segmentControlView.delegate = self
-       
+        
         stickerTitleView.layer.cornerRadius = 14
         stickerTitleView.layer.maskedCorners = [.layerMinXMinYCorner, .layerMaxXMinYCorner]
         
@@ -93,8 +91,36 @@ class StickerVC: UIViewController, SMSegmentedControlDelegate {
         delegate?.didDismissController?()
     }
     
+    func configureGhipyCategory() {
+        ghipyCategories = loadCachedGIFCategories()
+        if ghipyCategories.isEmpty {
+            GiphyAPIManager.shared.fetchGIFCategories { categories in
+                self.ghipyCategories = categories
+            } error: { error in
+                print(error)
+            }
+        }
+    }
+    
+    func loadCachedGIFCategories() -> [GiphyCategory] {
+        guard let data = UserDefaults.standard.data(forKey: "GIF_CATEGORIES") else {
+            return []
+        }
+        do {
+            let decoded = try JSONDecoder().decode([GiphyCategory].self, from: data)
+            return decoded
+        } catch {
+            print("Failed to decode cached categories:", error)
+            return []
+        }
+    }
+    
     func didTapSegment(_ idx: Int) {
         print(idx)
+        
+        if idx == 2 {
+            stickerCategoryCollectionView.reloadData()
+        }
         var direction: UIPageViewController.NavigationDirection = .forward
         if (isVideo && idx == 2) || (!isVideo && idx == 1) {
             guard selectedType != .giphy else {
@@ -140,9 +166,9 @@ class StickerVC: UIViewController, SMSegmentedControlDelegate {
         stickerPageViewController?.type = selectedType
         
         /*
-        stickerPageViewController?.packInfo = packInfo
-        stickerPageViewController?.stickerInfo = stickerInfo
-        */
+         stickerPageViewController?.packInfo = packInfo
+         stickerPageViewController?.stickerInfo = stickerInfo
+         */
         
         let isAnimating = selectedType == .animatedSticker
         stickerCollections = getStickerCollections(isAnimating: isAnimating)
@@ -150,12 +176,12 @@ class StickerVC: UIViewController, SMSegmentedControlDelegate {
         
         var selection = 0
         switch selectedType {
-            case .sticker:
-                selection = staticStickerSelected
-            case .animatedSticker:
-                selection = animatedStickerSelected
-            case .giphy:
-                selection = myPackStickerSelected
+        case .sticker:
+            selection = staticStickerSelected
+        case .animatedSticker:
+            selection = animatedStickerSelected
+        case .giphy:
+            selection = myPackStickerSelected
         }
         
         self.currentSelected = selection
@@ -175,7 +201,7 @@ class StickerVC: UIViewController, SMSegmentedControlDelegate {
             }
         }
     }
-
+    
     func fetchMyPacks() {
         GiphyAPIManager.shared.fetchTrendingGiphy(type: .sticker) { [weak self] result in
             guard let self = self else { return }
@@ -185,12 +211,11 @@ class StickerVC: UIViewController, SMSegmentedControlDelegate {
         } error: { message in
             
         }
-
     }
     
     func getStickerCollections(isAnimating: Bool)-> [StickerItem] {
         
-//        let collections = isAnimating ? stickerObject?.items.filter { $0.isAnimated } ? stickerObject?.items.filter { !$0.isAnimated }
+        //        let collections = isAnimating ? stickerObject?.items.filter { $0.isAnimated } ? stickerObject?.items.filter { !$0.isAnimated }
         
         if isAnimating {
             return stickerObject?.items.filter { $0.isAnimated } ?? [StickerItem]()
@@ -205,8 +230,8 @@ class StickerVC: UIViewController, SMSegmentedControlDelegate {
                 let decoder = JSONDecoder()
                 let data = result.data(using: .utf8)!
                 let response = try decoder.decode(StickerPackResponse.self, from: data)
-//                let nonAnimatingItems = response.items.filter { !$0.isAnimated }
-//                let newResponse = StickerPackResponse(status: response.status, assetBaseURL: response.assetBaseURL, items: nonAnimatingItems, nextPage: response.nextPage)
+                //                let nonAnimatingItems = response.items.filter { !$0.isAnimated }
+                //                let newResponse = StickerPackResponse(status: response.status, assetBaseURL: response.assetBaseURL, items: nonAnimatingItems, nextPage: response.nextPage)
                 stickerObject = response
                 return true
             } catch {
@@ -219,13 +244,13 @@ class StickerVC: UIViewController, SMSegmentedControlDelegate {
     
     override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
         if segue.identifier == "PageVC" {
-        
+            
             fetchMyPacks()
             stickerPageViewController = segue.destination as? StickerPageViewController
             stickerPageViewController?.pageDelegate = self
             
             stickerPageViewController?.gifyList = gifyList
-
+            
             stickerPageViewController?.animatedStickers = getStickerCollections(isAnimating: true)
         }
     }
@@ -238,7 +263,7 @@ extension StickerVC: UICollectionViewDataSource, UICollectionViewDelegate {
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
         switch selectedType {
         case .giphy:
-            return gifyList.count
+            return ghipyCategories.count
         default :
             return stickerCollections.count
         }
@@ -248,13 +273,9 @@ extension StickerVC: UICollectionViewDataSource, UICollectionViewDelegate {
         let cell = collectionView.dequeueReusableCell(withReuseIdentifier: StickerCategoryCell.id, for: indexPath) as! StickerCategoryCell
         switch selectedType {
         case .giphy:
-            print("MY PACK")
-            /*
-            cell.categoryNameLabel.text = packInfo[indexPath.row].packName
-             */
-            cell.showProIcon(isPro: false)
+            cell.categoryNameLabel.text = ghipyCategories[indexPath.row].name
+            cell.showProIcon(isPro: true)
         default :
-            print("ISSS PROOOO >>> ",stickerCollections[indexPath.row].isPro)
             cell.showProIcon(isPro: stickerCollections[indexPath.row].isPro)
             cell.categoryNameLabel.text = stickerCollections[indexPath.row].name.uppercased()
         }
@@ -267,12 +288,12 @@ extension StickerVC: UICollectionViewDataSource, UICollectionViewDelegate {
         }
         currentSelected = indexPath.row
         switch selectedType {
-            case .sticker:
-                staticStickerSelected = indexPath.row
-            case .animatedSticker:
-                animatedStickerSelected = indexPath.row
-            case .giphy:
-                myPackStickerSelected = indexPath.row
+        case .sticker:
+            staticStickerSelected = indexPath.row
+        case .animatedSticker:
+            animatedStickerSelected = indexPath.row
+        case .giphy:
+            myPackStickerSelected = indexPath.row
         }
         collectionView.scrollToItem(at: indexPath, at: .centeredHorizontally, animated: true)
         stickerPageViewController?.jumpToPage(at: indexPath.row)
@@ -281,14 +302,14 @@ extension StickerVC: UICollectionViewDataSource, UICollectionViewDelegate {
 
 extension StickerVC: UICollectionViewDelegateFlowLayout {
     
-//    func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
-//
-//        let nameText = stickerObject?.items[indexPath.row].name ?? "String"
-//        var size = " \(nameText) ".size(withAttributes: nil)
-//        size.width = size.width + 22
-//        size.height = stickerCategoryCollectionView.bounds.height
-//        return size
-//    }
+    //    func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
+    //
+    //        let nameText = stickerObject?.items[indexPath.row].name ?? "String"
+    //        var size = " \(nameText) ".size(withAttributes: nil)
+    //        size.width = size.width + 22
+    //        size.height = stickerCategoryCollectionView.bounds.height
+    //        return size
+    //    }
     
     func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, minimumInteritemSpacingForSectionAt section: Int) -> CGFloat {
         return 0
@@ -318,83 +339,13 @@ extension StickerVC: StickerPageViewControllerDelegate {
     
     func selectStickerCategoryItem(at index: Int) {
         switch selectedType {
-            case .sticker:
-                staticStickerSelected = index
-            case .animatedSticker:
-                animatedStickerSelected = index
-            case .giphy:
-                myPackStickerSelected = index
+        case .sticker:
+            staticStickerSelected = index
+        case .animatedSticker:
+            animatedStickerSelected = index
+        case .giphy:
+            myPackStickerSelected = index
         }
         stickerCategoryCollectionView.selectItem(at: IndexPath(row: index, section: 0), animated: true, scrollPosition: .centeredHorizontally)
     }
 }
-
-extension NSLayoutConstraint {
-    /**
-     Change multiplier constraint
-     
-     - parameter multiplier: CGFloat
-     - returns: NSLayoutConstraint
-     */
-    func setMultiplier(multiplier:CGFloat) -> NSLayoutConstraint {
-        
-        NSLayoutConstraint.deactivate([self])
-        
-        let newConstraint = NSLayoutConstraint(
-            item: firstItem,
-            attribute: firstAttribute,
-            relatedBy: relation,
-            toItem: secondItem,
-            attribute: secondAttribute,
-            multiplier: multiplier,
-            constant: constant)
-        
-        newConstraint.priority = priority
-        newConstraint.shouldBeArchived = self.shouldBeArchived
-        newConstraint.identifier = self.identifier
-        
-        NSLayoutConstraint.activate([newConstraint])
-        return newConstraint
-    }
-}
-
-
-class CustomSegmentedControl: UISegmentedControl{
-    private let segmentInset: CGFloat = 2       //your inset amount
-    private let segmentImage: UIImage? = UIImage(color: UIColor.white)    //your color
-
-    override func layoutSubviews(){
-        super.layoutSubviews()
-
-        //background
-        layer.cornerRadius = bounds.height/2
-        //foreground
-        let foregroundIndex = numberOfSegments
-        if subviews.indices.contains(foregroundIndex), let foregroundImageView = subviews[foregroundIndex] as? UIImageView
-        {
-            foregroundImageView.bounds = foregroundImageView.bounds.insetBy(dx: segmentInset, dy: segmentInset)
-            foregroundImageView.image = segmentImage    //substitute with our own colored image
-            foregroundImageView.layer.removeAnimation(forKey: "SelectionBounds")    //this removes the weird scaling animation!
-            foregroundImageView.layer.masksToBounds = true
-            
-            foregroundImageView.layer.cornerRadius = foregroundImageView.bounds.height/2
-        }
-    }
-}
-
-extension UIImage{
-    
-    //creates a UIImage given a UIColor
-    public convenience init?(color: UIColor, size: CGSize = CGSize(width: 1, height: 1),scale : CGFloat = UIScreen.main.scale) {
-        let rect = CGRect(origin: .zero, size: size)
-        UIGraphicsBeginImageContextWithOptions(rect.size, false, scale)
-        color.setFill()
-        UIRectFill(rect)
-        let image = UIGraphicsGetImageFromCurrentImageContext()
-        UIGraphicsEndImageContext()
-    
-        guard let cgImage = image?.cgImage else { return nil }
-        self.init(cgImage: cgImage)
-    }
-}
-
