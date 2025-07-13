@@ -26,7 +26,7 @@ class GiphyAPIService: NSObject {
     private let BASE_URL_STICKERS = "https://api.giphy.com/v1/sticker"
     private let BASE_URL_EMOJI = "https://api.giphy.com/v1/emoji"
     private let BASE_URL_TEXTS = "https://api.giphy.com/v1/text"
-    private let BASE_URL_CATEGORIES = "api.giphy.com/v1/gifs/categories"
+    private let BASE_URL_CATEGORIES = "https://api.giphy.com/v1/gifs/categories"
     
     private var tendingSearchKeywordURL : String{
         return "https://api.giphy.com/v1/trending/searches"
@@ -126,7 +126,7 @@ class GiphyAPIService: NSObject {
     
     @available(iOSApplicationExtension 13.0, *)
     func fetchGIFCategories() -> AnyPublisher<GiphyResponseModel<GiphyCategory>, Error> {
-        guard var components = URLComponents(string: "https://api.giphy.com/v1/gifs/categories") else {
+        guard var components = URLComponents(string: BASE_URL_CATEGORIES) else {
             return Fail(error: URLError(.badURL)).eraseToAnyPublisher()
         }
         
@@ -145,4 +145,18 @@ class GiphyAPIService: NSObject {
             .eraseToAnyPublisher()
     }
 
+    func fetchDateFromCategory(category : GiphyCategory)->AnyPublisher<GiphyResponseModel<GiphyGIFModel>,Error>{
+        guard let key = category.nameEncoded, let url = URL(string: searchByKeywordURL(key, 0)) else{
+            return Fail(error: URLError(.badURL)).eraseToAnyPublisher()
+        }
+        
+        // Make the network call
+        return URLSession.shared.dataTaskPublisher(for: url)
+            .map({ response in
+                return response.data
+            })
+            .decode(type: GiphyResponseModel<GiphyGIFModel>.self, decoder: JSONDecoder()) // Decode JSON
+            .receive(on: DispatchQueue.main) // Ensure updates happen on the main thread
+            .eraseToAnyPublisher() // Erase publisher type
+    }
 }

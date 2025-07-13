@@ -19,6 +19,7 @@ class StickerPageViewController: UIPageViewController {
     var animatedStickers: [StickerItem] = []
     var type: StickerVCTypeState = .sticker
     var gifyList: [GiphyGIFModel] = []
+    var ghipyCategories: [GiphyCategory] = []
 //    var stickerInfo: [[StickerInfo]] = []
     
     weak var pageDelegate: StickerPageViewControllerDelegate?
@@ -39,7 +40,7 @@ class StickerPageViewController: UIPageViewController {
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
         if Reachability.shared.connection == .unavailable {
-            BFToast.show(inViewCenter: "Make sure you have internet connection and try again.", after: 0.0, delay: 1.0, disappeared: nil)
+            BFToast.show(inViewCenter: "Make sure you have internet connection and try again.", after: 2.0, delay: 1.0, disappeared: nil)
         }
     }
     
@@ -77,7 +78,10 @@ class StickerPageViewController: UIPageViewController {
         pageContentViewController.itemIndex = index
         pageContentViewController.type = type
         if type == .giphy {
-            pageContentViewController.gifyList = gifyList
+            if GiphyInfo.count > 0 {
+                pageContentViewController.gifyList = GiphyInfo[index].items ?? []
+            }
+          
         }  else {
             pageContentViewController.stickerItem = animatedStickers[index]
         }

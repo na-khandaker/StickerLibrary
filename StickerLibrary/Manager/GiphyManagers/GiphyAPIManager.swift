@@ -1,32 +1,35 @@
 import Combine
 import Foundation
+
 @available(iOSApplicationExtension 13.0, *)
 final class GiphyAPIManager {
-    
+
     // MARK: - Singleton
     static let shared = GiphyAPIManager()
     private init() {
         setupBindings()
     }
-    
+
     // MARK: - Types
     private struct FetchState: Equatable {
         let keyword: String
         let type: GIFType
         let isNextPage: Bool
+        var offset: Int
+        var totalCount: Int? = nil
     }
 
     // MARK: - Properties
     private let apiService: GiphyAPIService = .shared
     private var cancellables = Set<AnyCancellable>()
     private var currentRequest: AnyCancellable?
-    
     private var offset: Int = 0
-    
+
     private var latestComplete: (([GiphyGIFModel]) -> Void)?
     private var latestError: ((String) -> Void)?
-    
+
     @Published private var fetchTrigger: FetchState?
+    private var searchItem : FetchState?
     
     // MARK: - Binding Setup
     private func setupBindings() {
@@ -38,8 +41,12 @@ final class GiphyAPIManager {
             }
             .store(in: &cancellables)
     }
-    
+
     // MARK: - Public API
+
+    func setSearch(key : String,type : GIFType = .gif,offest : Int, totalCount : Int){
+        self.searchItem = .init(keyword: key, type: type, isNextPage: true, offset: offset,totalCount: totalCount)
+    }
     
     func fetchTrendingSearchesKeywords(
         complete: @escaping ([String]) -> Void,
@@ -56,18 +63,19 @@ final class GiphyAPIManager {
             })
             .store(in: &cancellables)
     }
-    
+
     func fetchTrendingGiphy(
         type: GIFType = .gif,
         isNext: Bool = false,
+        offset: Int = 0,
         complete: @escaping ([GiphyGIFModel]) -> Void,
         error: @escaping (String) -> Void
     ) {
         latestComplete = complete
         latestError = error
-        fetchTrigger = FetchState(keyword: "", type: type, isNextPage: isNext)
+        fetchTrigger = FetchState(keyword: "", type: type, isNextPage: isNext, offset: offset)
     }
-    
+
     func searchGiphy(
         searchKeyWord: String,
         type: GIFType = .gif,
@@ -77,7 +85,7 @@ final class GiphyAPIManager {
     ) {
         latestComplete = complete
         latestError = error
-        fetchTrigger = FetchState(keyword: searchKeyWord, type: type, isNextPage: isNext)
+        fetchTrigger = FetchState(keyword: searchKeyWord, type: type, isNextPage: isNext, offset: 0)
     }
     
     func nextPage(
@@ -89,10 +97,11 @@ final class GiphyAPIManager {
         
         guard let last = fetchTrigger else {
             error("No previous search or trending context")
+            self.fetchTrigger = self.searchItem
             return
         }
-        
-        fetchTrigger = FetchState(keyword: last.keyword, type: last.type, isNextPage: true)
+        print ("last Object >>",last.offset)
+        fetchTrigger = FetchState(keyword: last.keyword, type: last.type, isNextPage: true, offset: last.offset)
     }
 
     // MARK: - Request Cancellation
@@ -129,15 +138,14 @@ final class GiphyAPIManager {
                 return apiService.fetchBySearch(keyword: state.keyword, offset: offset)
             }
         }()
-        
+
         currentRequest = publisher
             .receive(on: DispatchQueue.main)
             .sink(receiveCompletion: { [weak self] completion in
                 guard let self else { return }
                 self.currentRequest = nil
-                
+
                 if case let .failure(err) = completion {
-                    // Don't report error if the request was cancelled
                     if (err as? URLError)?.code != .cancelled {
                         self.latestError?(err.localizedDescription)
                     }
@@ -148,32 +156,17 @@ final class GiphyAPIManager {
                     self.latestError?("Invalid data")
                     return
                 }
-                
-                self.offset = (result.pagination?.offset ?? 0) + (result.pagination?.count ?? 0)
+
+                let newOffset = (result.pagination?.offset ?? 0) + (result.pagination?.count ?? 0)
+                self.offset = newOffset
+                self.fetchTrigger?.offset = newOffset
+                self.fetchTrigger?.totalCount = result.pagination?.totalCount
+
                 let validGIFs = data.filter { $0.images?.previewGIF != nil }
                 self.latestComplete?(validGIFs)
             })
-    }
-    
-//    @available(iOSApplicationExtension 13.0, *)
-//    func fetchGIFCategories(
-//        complete: @escaping ([GiphyCategory]) -> Void,
-//        error: @escaping (String) -> Void
-//    ) {
-//        apiService.fetchGIFCategories()
-//            .receive(on: DispatchQueue.main)
-//            .sink(receiveCompletion: { completionResult in
-//                if case let .failure(err) = completionResult {
-//                    error(err.localizedDescription)
-//                }
-//            }, receiveValue: { result in
-//                complete(result.data ?? [])
-//            })
-//            .store(in: &cancellables)
-//    }
+    }   
 
-    
-    @available(iOSApplicationExtension 13.0, *)
     func fetchGIFCategories(
         complete: @escaping ([GiphyCategory]) -> Void,
         error: @escaping (String) -> Void
@@ -186,18 +179,69 @@ final class GiphyAPIManager {
                 }
             }, receiveValue: { result in
                 let categories = result.data ?? []
-                
-                // Encode and store in UserDefaults
+
                 do {
                     let encoded = try JSONEncoder().encode(categories)
                     UserDefaults.standard.set(encoded, forKey: "GIF_CATEGORIES")
                 } catch {
                     print("Failed to encode categories:", error)
                 }
-                
+
                 complete(categories)
             })
             .store(in: &cancellables)
     }
 
+    func batchRequest(infoList: [GiphyCategory], complete: @escaping ([GiphyInfoModel]) -> Void) {
+        var resultArray: [GiphyInfoModel] = infoList.map { gc in
+            return .init(category: gc)
+        }
+        let operationQueue = OperationQueue()
+        operationQueue.maxConcurrentOperationCount = 3
+
+        let group: DispatchGroup = DispatchGroup()
+        let task: DispatchQueue = .init(label: "giphy.category.batch", qos: .userInitiated)
+
+        for i in 0..<infoList.count {
+            let model = infoList[i]
+            group.enter()
+            task.async {
+                let op = BlockOperation {
+                    self.fetchCategory(category: model) { info in
+                        resultArray[i] = info
+                        group.leave()
+                    } error: { error in
+                        print(error)
+                        group.leave()
+                    }
+                }
+                operationQueue.addOperation(op)
+            }
+        }
+
+        group.notify(queue: .main) {
+            complete(resultArray)
+            print("complete")
+        }
+    }
+
+    private func fetchCategory(category: GiphyCategory, complete: @escaping (GiphyInfoModel) -> Void, error: @escaping (String) -> Void) {
+        apiService.fetchDateFromCategory(category: category)
+            .receive(on: DispatchQueue.main)
+            .sink(receiveCompletion: { completionResult in
+                if case let .failure(err) = completionResult {
+                    error(err.localizedDescription)
+                }
+            }, receiveValue: { result in
+                let offset = (result.pagination?.offset ?? 0) + (result.pagination?.count ?? 0)
+                let cat = GiphyInfoModel(
+                    category: category,
+                    items: result.data,
+                    offset: offset,
+                    totalCount: result.pagination?.totalCount ?? 0
+                )
+                complete(cat)
+            })
+            .store(in: &cancellables)
+    }
 }

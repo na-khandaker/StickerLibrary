@@ -62,13 +62,13 @@ class StickerPackCollectionVC: UICollectionViewController, UICollectionViewDeleg
             guard let self else { return }
             if type != .giphy {
                 if shouldShowNoInterNetAlert(for: type) {
-                      BFToast.show(inViewCenter: "Make sure you have internet connection and try again.", after: 0.0, delay: 0.0, disappeared: nil)
+                      BFToast.show(inViewCenter: "Make sure you have internet connection and try again.", after: 0.0, delay: 1.0, disappeared: nil)
                 }
             }
         }
         
         if shouldShowNoInterNetAlert(for: type) && Reachability.shared.connection == .unavailable  {
-             BFToast.show(inViewCenter: "Make sure you have internet connection and try again.", after: 0.0, delay: 0.0, disappeared: nil)
+             BFToast.show(inViewCenter: "Make sure you have internet connection and try again.", after: 0.0, delay: 1.0, disappeared: nil)
         }
         
         Reachability.shared.whenReachable = { [weak self] _ in
@@ -138,7 +138,7 @@ class StickerPackCollectionVC: UICollectionViewController, UICollectionViewDeleg
             let stickerLocalURL = SMFileManager.shared.getFileURL(for: "Stickers/Giphy\(path)")!
             
             if !SMFileManager.shared.isFileExists(at: stickerLocalURL.path) && Reachability.shared.connection == .unavailable {
-                BFToast.show(inViewCenter: "Make sure you have internet connection and try again.", after: 0.0, delay: 0.0, disappeared: nil)
+                BFToast.show(inViewCenter: "Make sure you have internet connection and try again.", after: 0.0, delay: 1.0, disappeared: nil)
                 return
             }
             if let url = URL(string: path) {
@@ -157,7 +157,7 @@ class StickerPackCollectionVC: UICollectionViewController, UICollectionViewDeleg
                     case .failure(let error):
                         DispatchQueue.main.async {
                             SVProgressHUD.dismiss()
-                            BFToast.show(inViewCenter: "\(error.localizedDescription)", after: 0.0, delay: 0.0, disappeared: nil)
+                            BFToast.show(inViewCenter: "\(error.localizedDescription)", after: 0.0, delay: 1.0, disappeared: nil)
                             return
                         }
                     }
@@ -171,7 +171,7 @@ class StickerPackCollectionVC: UICollectionViewController, UICollectionViewDeleg
                 
                 if !SMFileManager.shared.isFileExists(at: stickerLocalURL.path) && Reachability.shared.connection == .unavailable {
                     DispatchQueue.main.async {
-                          BFToast.show(inViewCenter: "Make sure you have internet connection and try again.", after: 0.0, delay: 0.0, disappeared: nil)
+                          BFToast.show(inViewCenter: "Make sure you have internet connection and try again.", after: 0.0, delay: 1.0, disappeared: nil)
                     }
                     return
                 }
@@ -277,13 +277,17 @@ class StickerPackCollectionVC: UICollectionViewController, UICollectionViewDeleg
     }
     
     func nextPageGiphy(){
-        guard !isProcessing else{return}
+        guard !isProcessing else{
+            return
+        }
         isProcessing = true
         GiphyAPIManager.shared.nextPage{[weak self] result in
             guard let self else {return}
             let lastIndex = self.gifyList.count
+            print("lastIndex >>>",lastIndex)
             let newIndex : [IndexPath] = (lastIndex..<(lastIndex+result.count)).map({IndexPath(row: $0, section: 0)})
             self.gifyList.append(contentsOf: result)
+            print("NOW TOTAL === ",gifyList.count)
             self.collectionView.insertItems(at: newIndex)
             self.isProcessing = false
         } error: { error in

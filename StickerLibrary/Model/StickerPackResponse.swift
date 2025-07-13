@@ -41,3 +41,21 @@ enum ThumbBgColor: String, Codable {
     case bf4F4F = "#bf4f4f"
     case the000000 = "#000000"
 }
+
+var GiphyInfo = [GiphyInfoModel]()
+
+struct GiphyInfoModel {
+    
+    var category: GiphyCategory
+    var items: [GiphyGIFModel]?
+    var offset : Int = 0
+    var totalCount : Int = 0
+    init(category: GiphyCategory, items: [GiphyGIFModel]? = nil, offset: Int = 0, totalCount: Int = 0) {
+        self.category = category
+        self.items = items
+        self.offset = offset
+        self.totalCount = totalCount
+    }
+
+    
+}

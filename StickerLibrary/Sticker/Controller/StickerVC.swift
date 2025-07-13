@@ -97,6 +97,8 @@ class StickerVC: UIViewController, SMSegmentedControlDelegate {
         if ghipyCategories.isEmpty {
             GiphyAPIManager.shared.fetchGIFCategories { categories in
                 self.ghipyCategories = categories
+                self.stickerPageViewController?.ghipyCategories = categories
+                
             } error: { error in
                 print(error)
             }
@@ -113,6 +115,18 @@ class StickerVC: UIViewController, SMSegmentedControlDelegate {
         } catch {
             print("Failed to decode cached categories:", error)
             return []
+        }
+    }
+    
+    func fetchItemsInGiphyCategory(categories: [GiphyCategory]) {
+        for category in categories {
+            if let categoryName = category.name {
+//                GiphyAPIManager.shared.searchGiphy(searchKeyWord: categoryName) { items in
+//                    GiphyInfo.append(GiphyInfoModel(keywords: category, items: items))
+//                } error: { error in
+//                    
+//                }
+            }
         }
     }
     
@@ -249,9 +263,7 @@ class StickerVC: UIViewController, SMSegmentedControlDelegate {
             fetchMyPacks()
             stickerPageViewController = segue.destination as? StickerPageViewController
             stickerPageViewController?.pageDelegate = self
-            
             stickerPageViewController?.gifyList = gifyList
-            
             stickerPageViewController?.animatedStickers = getStickerCollections(isAnimating: true)
         }
     }
@@ -264,7 +276,7 @@ extension StickerVC: UICollectionViewDataSource, UICollectionViewDelegate {
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
         switch selectedType {
         case .giphy:
-            return ghipyCategories.count
+            return GiphyInfo.count
         default :
             return stickerCollections.count
         }
@@ -274,7 +286,7 @@ extension StickerVC: UICollectionViewDataSource, UICollectionViewDelegate {
         let cell = collectionView.dequeueReusableCell(withReuseIdentifier: StickerCategoryCell.id, for: indexPath) as! StickerCategoryCell
         switch selectedType {
         case .giphy:
-            cell.categoryNameLabel.text = ghipyCategories[indexPath.row].name
+            cell.categoryNameLabel.text = GiphyInfo[indexPath.row].category.name
             cell.showProIcon(isPro: true)
         default :
             cell.showProIcon(isPro: stickerCollections[indexPath.row].isPro)
@@ -299,17 +311,25 @@ extension StickerVC: UICollectionViewDataSource, UICollectionViewDelegate {
         collectionView.scrollToItem(at: indexPath, at: .centeredHorizontally, animated: true)
         
         if selectedType == .giphy {
-            if let keyword = ghipyCategories[giphyStickerSelected].name {
-                SVProgressHUD.show(withStatus: "requesting")
-                GiphyAPIManager.shared.searchGiphy(searchKeyWord: keyword) { giphyList in
-                    self.gifyList = giphyList
+            if GiphyInfo.count > 0 {
+                if let items = GiphyInfo[giphyStickerSelected].items {
+                    self.gifyList = items
                     self.stickerPageViewController?.gifyList = self.gifyList
-                    DispatchQueue.main.async {
-                        SVProgressHUD.dismiss()
-                        self.stickerPageViewController?.jumpToPage(at: indexPath.row)
+                    self.stickerPageViewController?.jumpToPage(at: indexPath.row)
+                }
+            } else {
+                if let keyword = ghipyCategories[giphyStickerSelected].name {
+                    SVProgressHUD.show(withStatus: "requesting")
+                    GiphyAPIManager.shared.searchGiphy(searchKeyWord: keyword) { giphyList in
+                        self.gifyList = giphyList
+                        self.stickerPageViewController?.gifyList = self.gifyList
+                        DispatchQueue.main.async {
+                            SVProgressHUD.dismiss()
+                            self.stickerPageViewController?.jumpToPage(at: indexPath.row)
+                        }
+                    } error: { error in
+                        
                     }
-                } error: { error in
-                    
                 }
             }
         } else {
