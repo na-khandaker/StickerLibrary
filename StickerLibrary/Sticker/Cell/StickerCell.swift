@@ -111,7 +111,7 @@ class StickerCell: UICollectionViewCell {
                     let decoder = JSONDecoder()
                     let data = result.data(using: .utf8)!
                     let response = try decoder.decode(StickerPackResponse.self, from: data)
-                    baseURl = response.assetBaseURL
+                    baseURl = response.assetBaseURL ?? baseURl
                 } catch {
                     print("Error")
                 }

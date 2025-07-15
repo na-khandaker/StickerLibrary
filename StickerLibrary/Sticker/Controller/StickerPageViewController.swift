@@ -11,6 +11,7 @@ protocol StickerPageViewControllerDelegate: AnyObject {
     func selectStickerCategoryItem(at index: Int)
     func getSticker(from stickerURLs: [String])
     func didSelectStickerItem(withImage image: UIImage, url: URL, isAnimated: Bool)
+    func showPurchasePage()
 }
 
 class StickerPageViewController: UIPageViewController {
@@ -58,7 +59,7 @@ class StickerPageViewController: UIPageViewController {
         switch type {
             
         case .giphy:
-            if self.gifyList.count == 0 || index >= self.gifyList.count {
+            if self.gifyList.count == 0 || index >= GiphyInfo.count {
                 guard let emptyVC = storyboard?.instantiateViewController(withIdentifier: "NoStickerVC") else {
                     return nil
                 }
@@ -81,7 +82,6 @@ class StickerPageViewController: UIPageViewController {
             if GiphyInfo.count > 0 {
                 pageContentViewController.gifyList = GiphyInfo[index].items ?? []
             }
-          
         }  else {
             pageContentViewController.stickerItem = animatedStickers[index]
         }
@@ -178,6 +178,10 @@ extension StickerPageViewController: UIPageViewControllerDataSource, UIPageViewC
 //MARK: - StickerPackCollectionVCDelegate
 
 extension StickerPageViewController: StickerPackCollectionVCDelegate {
+    func showPurchasePage() {
+        self.pageDelegate?.showPurchasePage()
+    }
+    
     func didSelectStickerItem(with stickerImage: UIImage, url: URL, isAnimated: Bool) {
         self.pageDelegate?.didSelectStickerItem(withImage: stickerImage, url: url, isAnimated: true)
     }

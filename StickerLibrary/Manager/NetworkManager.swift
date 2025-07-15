@@ -9,6 +9,11 @@ import Foundation
 import UIKit
 
 final public class NetworkManager: NSObject {
+    
+    let BASEURL =  "http://iv2-api.gifmakerpro.com/v2/stickers/list/0/0"
+    
+    let API_KEY = "+bWQKjfK-=jfbqbc8q=jDLBc&526Crr5sdfsdf4216549xasx894JjyWpXTUxsRb5_"
+
     private var urlSession = URLSession(configuration: URLSessionConfiguration.default)
     private var apiTasks: [URLSessionTask] = []
     private var requestTimeoutValue: Double = 60.0
@@ -135,13 +140,13 @@ enum RequestError: Error {
 extension NetworkManager {
     
     func requestForGetStickersData(completion: ((Result<Data, RequestError>) -> Void)?) {
-          let url = URL(string: "http://bcl-app-asset.interlinkapi.com/stickers/ios/com.braincraft.stickemaker/list/0/0")
+          let url = URL(string: BASEURL)
            guard let requestUrl = url else { fatalError() }
            
            var request = URLRequest(url: requestUrl)
            request.httpMethod = "GET"
            
-           request.allHTTPHeaderFields = ["authorization": "eyJhbGciOiJIUzM4NCJ9.eyJ1c2VybmFtZSI6ImJyYWluY3JhZnQtYXNzZXRzLWFwaSIsInBhc3N3b3JkIjoiYmNsZG1pbjEyMzQ1In0.tf3QmzgwKFSiD9as51YIuCk-HWPjbGIVuuOpV7YV5VB3n39lZ58JK5gmA8yEsJAp"]
+           request.allHTTPHeaderFields = ["authorization": API_KEY]
            
         let task =  NetworkManager.sharedInstance.urlSession.dataTask(with: request) { (data, response, error) in
                if let error = error {

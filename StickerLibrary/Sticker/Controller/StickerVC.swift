@@ -15,6 +15,7 @@ protocol SMDismissViewControllerProtocol{
 
 protocol StickerVCDelegate: AnyObject,SMDismissViewControllerProtocol {
     func addSticker(from stickerURLs: [String], controller: StickerVC)
+    func showPurchasePage() 
     func didSelectStickerItem(with stickerImage: UIImage, url: URL, isAnimated: Bool)
 }
 
@@ -233,9 +234,9 @@ class StickerVC: UIViewController, SMSegmentedControlDelegate {
         //        let collections = isAnimating ? stickerObject?.items.filter { $0.isAnimated } ? stickerObject?.items.filter { !$0.isAnimated }
         
         if isAnimating {
-            return stickerObject?.items.filter { $0.isAnimated } ?? [StickerItem]()
+            return stickerObject?.items?.filter { $0.isAnimated ?? false } ?? [StickerItem]()
         } else {
-            return stickerObject?.items.filter { !$0.isAnimated } ?? [StickerItem]()
+            return stickerObject?.items?.filter { !($0.isAnimated ?? false) } ?? [StickerItem]()
         }
     }
     
@@ -248,6 +249,9 @@ class StickerVC: UIViewController, SMSegmentedControlDelegate {
                 //                let nonAnimatingItems = response.items.filter { !$0.isAnimated }
                 //                let newResponse = StickerPackResponse(status: response.status, assetBaseURL: response.assetBaseURL, items: nonAnimatingItems, nextPage: response.nextPage)
                 stickerObject = response
+                for allItems in response.items! {
+                    print("Animated >>",allItems.isAnimated)
+                }
                 return true
             } catch {
                 print("Sticker DECODE ERROR")
@@ -289,8 +293,8 @@ extension StickerVC: UICollectionViewDataSource, UICollectionViewDelegate {
             cell.categoryNameLabel.text = GiphyInfo[indexPath.row].category.name
             cell.showProIcon(isPro: true)
         default :
-            cell.showProIcon(isPro: stickerCollections[indexPath.row].isPro)
-            cell.categoryNameLabel.text = stickerCollections[indexPath.row].name.uppercased()
+            cell.showProIcon(isPro: stickerCollections[indexPath.row].isPro ?? false )
+            cell.categoryNameLabel.text = stickerCollections[indexPath.row].name?.uppercased()
         }
         return cell
     }
@@ -311,24 +315,33 @@ extension StickerVC: UICollectionViewDataSource, UICollectionViewDelegate {
         collectionView.scrollToItem(at: indexPath, at: .centeredHorizontally, animated: true)
         
         if selectedType == .giphy {
+            
             if GiphyInfo.count > 0 {
-                if let items = GiphyInfo[giphyStickerSelected].items {
-                    self.gifyList = items
-                    self.stickerPageViewController?.gifyList = self.gifyList
-                    self.stickerPageViewController?.jumpToPage(at: indexPath.row)
-                }
-            } else {
-                if let keyword = ghipyCategories[giphyStickerSelected].name {
-                    SVProgressHUD.show(withStatus: "requesting")
-                    GiphyAPIManager.shared.searchGiphy(searchKeyWord: keyword) { giphyList in
-                        self.gifyList = giphyList
+                
+                if let items =  GiphyInfo[indexPath.row].items {
+                    if items.count > 0 {
+                        GiphyAPIManager.shared.setSearch(key: ghipyCategories[indexPath.row].nameEncoded ?? "", offest: GiphyInfo[indexPath.row].offset, totalCount: GiphyInfo[indexPath.row].totalCount)
+                        self.gifyList = items
                         self.stickerPageViewController?.gifyList = self.gifyList
-                        DispatchQueue.main.async {
-                            SVProgressHUD.dismiss()
-                            self.stickerPageViewController?.jumpToPage(at: indexPath.row)
-                        }
-                    } error: { error in
+                        self.stickerPageViewController?.jumpToPage(at: indexPath.row)
                         
+                    } else {
+                        SVProgressHUD.show(withStatus: "fetching giphy...")
+                        GiphyAPIManager.shared.searchGiphy(searchKeyWord: GiphyInfo[indexPath.row].category.nameEncoded ?? "") { result in
+                            if let index = GiphyInfo.firstIndex(where: { $0.category.nameEncoded == GiphyInfo[indexPath.row].category.nameEncoded }) {
+                                GiphyInfo[index].items = result
+                                self.gifyList = result
+                                self.stickerPageViewController?.gifyList = self.gifyList
+                                DispatchQueue.main.async {
+                                    SVProgressHUD.dismiss()
+                                    self.stickerPageViewController?.jumpToPage(at: indexPath.row)
+                                }
+                            }
+                        } error: { errro in
+                            DispatchQueue.main.async {
+                                SVProgressHUD.dismiss()
+                            }
+                        }
                     }
                 }
             }
@@ -364,16 +377,23 @@ extension StickerVC: UICollectionViewDelegateFlowLayout {
 
 
 extension StickerVC: StickerPageViewControllerDelegate {
+    
+    func showPurchasePage() {
+        self.dismiss(animated: true) {
+            self.delegate?.showPurchasePage()
+        }
+    }
+    
+    
+    func getSticker(from stickerURLs: [String]) {
+        
+    }
+    
     func didSelectStickerItem(withImage image: UIImage, url: URL, isAnimated: Bool) {
         self.dismiss(animated: true) {
             self.delegate?.didSelectStickerItem(with: image, url: url, isAnimated: isAnimated)
         }
     }
-    
-    func getSticker(from stickerURLs: [String]) {
-        self.delegate?.addSticker(from: stickerURLs, controller: self)
-    }
-    
     
     func selectStickerCategoryItem(at index: Int) {
         switch selectedType {

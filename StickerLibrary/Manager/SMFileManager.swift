@@ -11,6 +11,7 @@ import UIKit
 import YYImage
 
 class SMFileManager {
+    
     static let shared = SMFileManager()
     
     let fileManager = FileManager.default

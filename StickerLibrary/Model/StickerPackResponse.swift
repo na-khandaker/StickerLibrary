@@ -9,10 +9,10 @@ import Foundation
 
 // MARK: - StickerPackResponse
 struct StickerPackResponse: Codable {
-    let status: Int
-    let assetBaseURL: String
-    let items: [StickerItem]
-    let nextPage: Int
+    let status: Int?
+    let assetBaseURL: String?
+    let items: [StickerItem]?
+    let nextPage: Int?
 
     enum CodingKeys: String, CodingKey {
         case status
@@ -23,25 +23,24 @@ struct StickerPackResponse: Codable {
 
 // MARK: - Item
 struct StickerItem: Codable {
-    let id, name: String
+    let id, name: String?
     let thumbBgColor: ThumbBgColor?
-    let isAnimated, isPro: Bool
-    let code: String
-    let stickers: [String]
-    let totalStickers, version: Int
-    let thumb: String
+    let weight, version: Int?
+    let active, isPro, activeForIos, activeForAndroid: Bool?
+    let stickers: [String]?
+    let totalStickers: Int?
+    let code, thumb: String?
+    let isAnimated: Bool?
 
     enum CodingKeys: String, CodingKey {
         case id = "_id"
-        case name, thumbBgColor, isAnimated, isPro, code, stickers, totalStickers, version, thumb
+        case name, thumbBgColor, weight, version, active, isPro, activeForIos, activeForAndroid, stickers, totalStickers, code, thumb, isAnimated
     }
 }
+
 enum ThumbBgColor: String, Codable {
-    case b11616 = "#b11616"
-    case bf4F4F = "#bf4f4f"
     case the000000 = "#000000"
 }
-
 var GiphyInfo = [GiphyInfoModel]()
 
 struct GiphyInfoModel {
@@ -50,6 +49,7 @@ struct GiphyInfoModel {
     var items: [GiphyGIFModel]?
     var offset : Int = 0
     var totalCount : Int = 0
+    
     init(category: GiphyCategory, items: [GiphyGIFModel]? = nil, offset: Int = 0, totalCount: Int = 0) {
         self.category = category
         self.items = items

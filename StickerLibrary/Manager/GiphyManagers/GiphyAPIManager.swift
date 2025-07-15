@@ -45,6 +45,7 @@ final class GiphyAPIManager {
     // MARK: - Public API
 
     func setSearch(key : String,type : GIFType = .gif,offest : Int, totalCount : Int){
+        self.fetchTrigger = nil
         self.searchItem = .init(keyword: key, type: type, isNextPage: true, offset: offset,totalCount: totalCount)
     }
     
@@ -94,14 +95,12 @@ final class GiphyAPIManager {
     ) {
         latestComplete = complete
         latestError = error
-        
-        guard let last = fetchTrigger else {
-            error("No previous search or trending context")
+        if let last = fetchTrigger{
+            fetchTrigger = FetchState(keyword: last.keyword, type: last.type, isNextPage: true, offset: last.offset)
+        }else{
             self.fetchTrigger = self.searchItem
-            return
         }
-        print ("last Object >>",last.offset)
-        fetchTrigger = FetchState(keyword: last.keyword, type: last.type, isNextPage: true, offset: last.offset)
+       
     }
 
     // MARK: - Request Cancellation
@@ -159,8 +158,8 @@ final class GiphyAPIManager {
 
                 let newOffset = (result.pagination?.offset ?? 0) + (result.pagination?.count ?? 0)
                 self.offset = newOffset
-                self.fetchTrigger?.offset = newOffset
-                self.fetchTrigger?.totalCount = result.pagination?.totalCount
+//                self.fetchTrigger?.offset = newOffset
+//                self.fetchTrigger?.totalCount = result.pagination?.totalCount
 
                 let validGIFs = data.filter { $0.images?.previewGIF != nil }
                 self.latestComplete?(validGIFs)
@@ -221,13 +220,12 @@ final class GiphyAPIManager {
 
         group.notify(queue: .main) {
             complete(resultArray)
-            print("complete")
+            print("complete", resultArray)
         }
     }
 
     private func fetchCategory(category: GiphyCategory, complete: @escaping (GiphyInfoModel) -> Void, error: @escaping (String) -> Void) {
         apiService.fetchDateFromCategory(category: category)
-            .receive(on: DispatchQueue.main)
             .sink(receiveCompletion: { completionResult in
                 if case let .failure(err) = completionResult {
                     error(err.localizedDescription)

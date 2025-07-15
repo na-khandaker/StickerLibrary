@@ -20,6 +20,7 @@ enum GiphyDownloadError: Error {
 protocol StickerPackCollectionVCDelegate: AnyObject {
     
     func didSelectStickerItem(with stickerImage: UIImage, url: URL, isAnimated: Bool)
+    func showPurchasePage()
 }
 
 class StickerPackCollectionVC: UICollectionViewController, UICollectionViewDelegateFlowLayout {
@@ -106,9 +107,9 @@ class StickerPackCollectionVC: UICollectionViewController, UICollectionViewDeleg
     override func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
         switch type {
         case .animatedSticker:
-            return (stickerItem?.stickers.count) ?? 0
+            return (stickerItem?.stickers?.count) ?? 0
         case .sticker:
-            return (stickerItem?.stickers.count) ?? 0
+            return (stickerItem?.stickers?.count) ?? 0
         case .giphy:
             return gifyList.count
         }
@@ -119,7 +120,7 @@ class StickerPackCollectionVC: UICollectionViewController, UICollectionViewDeleg
         
         let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "Cell", for: indexPath) as! StickerCell
         if let sticker = stickerItem {
-            cell.configureCell(with: sticker.code, and: sticker.stickers[indexPath.row], isAnimating: sticker.isAnimated)
+            cell.configureCell(with: sticker.code ?? "", and: sticker.stickers?[indexPath.row] ?? "", isAnimating: sticker.isAnimated ?? false)
         }
         else if type == .giphy {
             cell.configureCellForGIFY(with: gifyList[indexPath.row], isAnimated: true)
@@ -133,6 +134,8 @@ class StickerPackCollectionVC: UICollectionViewController, UICollectionViewDeleg
        
         switch type {
         case .giphy:
+            
+            #warning("Check is Purchase")
             
             guard let path = gifyList[indexPath.row].images?.original?.url else { return }
             let stickerLocalURL = SMFileManager.shared.getFileURL(for: "Stickers/Giphy\(path)")!
@@ -166,8 +169,16 @@ class StickerPackCollectionVC: UICollectionViewController, UICollectionViewDeleg
             
         default:
             if let sticker = stickerItem {
-                isAnimated = sticker.isAnimated
-                let stickerLocalURL = SMFileManager.shared.getFileURL(for: "Stickers/\(sticker.code)/\(sticker.stickers[indexPath.row])")!
+                isAnimated = sticker.isAnimated ?? false
+                
+                let isPurchased = false
+                #warning("Check is Purchased")
+                if sticker.isPro ?? false  && !isPurchased {
+                    self.delegate?.showPurchasePage()
+                    return
+                }
+                
+                let stickerLocalURL = SMFileManager.shared.getFileURL(for: "Stickers/\(sticker.code ?? "")/\(sticker.stickers?[indexPath.row] ?? "")")!
                 
                 if !SMFileManager.shared.isFileExists(at: stickerLocalURL.path) && Reachability.shared.connection == .unavailable {
                     DispatchQueue.main.async {
