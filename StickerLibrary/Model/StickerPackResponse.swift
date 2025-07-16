@@ -41,7 +41,6 @@ struct StickerItem: Codable {
 enum ThumbBgColor: String, Codable {
     case the000000 = "#000000"
 }
-var GiphyInfo = [GiphyInfoModel]()
 
 struct GiphyInfoModel {
     
