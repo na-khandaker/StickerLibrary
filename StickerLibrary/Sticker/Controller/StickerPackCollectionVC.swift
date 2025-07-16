@@ -124,14 +124,25 @@ class StickerPackCollectionVC: UICollectionViewController, UICollectionViewDeleg
         return cell
     }
     
+    override func collectionView(_ collectionView: UICollectionView, shouldDeselectItemAt indexPath: IndexPath) -> Bool {
+        #warning("Check is Purchase & Pro ITEM")
+//        let isPurchased = false
+//      
+//        if sticker.isPro ?? false  && !isPurchased {
+//            self.delegate?.showPurchasePage()
+//            return
+//        }
+        return true
+
+    }
+    
+    
     override func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
         var stickerFileUrl: URL = URL(fileURLWithPath: "")
         var isAnimated = true
        
         switch type {
         case .giphy:
-            
-            #warning("Check is Purchase")
             
             guard let path = gifyList[indexPath.row].images?.original?.url else { return }
             
@@ -166,12 +177,6 @@ class StickerPackCollectionVC: UICollectionViewController, UICollectionViewDeleg
             if let sticker = stickerItem {
                 isAnimated = sticker.isAnimated ?? false
                 
-                let isPurchased = false
-                #warning("Check is Purchased")
-                if sticker.isPro ?? false  && !isPurchased {
-                    self.delegate?.showPurchasePage()
-                    return
-                }
                 
                 let stickerLocalURL = SMFileManager.shared.getFileURL(for: "Stickers/\(sticker.code ?? "")/\(sticker.stickers?[indexPath.row] ?? "")")!
                 
