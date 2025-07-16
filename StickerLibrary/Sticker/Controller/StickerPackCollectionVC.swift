@@ -26,10 +26,6 @@ protocol StickerPackCollectionVCDelegate: AnyObject {
 class StickerPackCollectionVC: UICollectionViewController, UICollectionViewDelegateFlowLayout {
     
     var itemIndex = 0
-    
-    private var isFetchingMore = false
-    private var currentPage = 0
-    private let limitPerPage = 50
     var isProcessing = false
     
     var stickerItem: StickerItem?
@@ -138,9 +134,8 @@ class StickerPackCollectionVC: UICollectionViewController, UICollectionViewDeleg
             #warning("Check is Purchase")
             
             guard let path = gifyList[indexPath.row].images?.original?.url else { return }
-            let stickerLocalURL = SMFileManager.shared.getFileURL(for: "Stickers/Giphy\(path)")!
             
-            if !SMFileManager.shared.isFileExists(at: stickerLocalURL.path) && Reachability.shared.connection == .unavailable {
+            if  Reachability.shared.connection == .unavailable {
                 BFToast.show(inViewCenter: "Make sure you have internet connection and try again.", after: 0.0, delay: 1.0, disappeared: nil)
                 return
             }
@@ -273,7 +268,7 @@ class StickerPackCollectionVC: UICollectionViewController, UICollectionViewDeleg
         let _ = SMFileManager.shared.createNewFolder(folderName: "", at: url)
         
         print("REquest url >> ",giphyURL)
-        FileDownloader.loadFileAsync(url: giphyURL, folderName: "Giphy") { [weak self] downloadedUrl, error in
+        FileDownloader.loadFileAsync(url: giphyURL, folderName: "Giphy", uniqueID: UUID().uuidString) { [weak self] downloadedUrl, error in
             if error == nil {
                 DispatchQueue.main.async {
                     if let urlString = downloadedUrl, let url = URL(string: urlString)  {
@@ -291,13 +286,25 @@ class StickerPackCollectionVC: UICollectionViewController, UICollectionViewDeleg
         guard !isProcessing else{
             return
         }
+
         isProcessing = true
         GiphyAPIManager.shared.nextPage{[weak self] result in
-            guard let self else {return}
+            
+            guard let self else { return }
+            
             let lastIndex = self.gifyList.count
+            
             print("lastIndex >>>",lastIndex)
+            
             let newIndex : [IndexPath] = (lastIndex..<(lastIndex+result.count)).map({IndexPath(row: $0, section: 0)})
+            
             self.gifyList.append(contentsOf: result)
+            
+            if GiphyInfo.count > 0 {
+                GiphyInfo[itemIndex].items = gifyList
+                GiphyInfo[itemIndex].offset = GiphyInfo[itemIndex].items?.count ?? 0
+            }
+
             print("NOW TOTAL === ",gifyList.count)
             self.collectionView.insertItems(at: newIndex)
             self.isProcessing = false
@@ -341,21 +348,6 @@ extension FileManager{
         return url
     }
     
-    
-    //    func getImageItemsFrom(url : URL,fileExtension  : String = "png") throws -> [URL]{
-    //        return try FileManager.default.contentsOfDirectory(at: url, includingPropertiesForKeys: nil,options: .skipsHiddenFiles)
-    //            .filter({$0.pathExtension == fileExtension}).sorted { lhs , rhs in
-    //                guard let lhsCreate = lhs.creation, let rhsCreate = rhs.creation else {return false}
-    //                return lhsCreate < rhsCreate
-    //            }
-    //    }
-    
-    //    func getOriginalImagesFromFolder(with url: URL) throws -> [URL] {
-    //        return try getImageItemsFrom(url: url).filter { url in
-    //            !url.path.contains("_Segmented") && !url.path.contains("_Edited") && !url.path.contains("_Cartoonify")
-    //        }
-    //    }
-    //
     func createNewFolder(folderName: String, at directory: URL) -> URL? {
         var isSuccess = false
         let folderURL = directory.appendingPathComponent(folderName)
@@ -377,254 +369,5 @@ extension FileManager{
             isSuccess = false
         }
         return isSuccess
-    }
-}
-import Foundation
-import UIKit
-import AVFoundation
-extension UIImage{
-    @discardableResult
-    
-    func writeJPG(to : URL) throws{
-        let imageData = self.jpegData(compressionQuality: 0.8)
-        try imageData?.write(to: to, options: .atomic)
-    }
-    func resize960()-> UIImage?{
-        // Removed condition for size less than 980 in order to always make sticker 980 by 980
-        var rect = AVMakeRect(aspectRatio: self.size, insideRect: .init(origin: .zero, size: .init(width: 960, height: 960))).integral
-        rect.size.width = rect.width.truncatingRemainder(dividingBy: 2) == 0 ? rect.width : rect.width - 1
-        rect.size.height = rect.height.truncatingRemainder(dividingBy: 2) == 0 ? rect.height : rect.height - 1
-        //        if size.width <= 980 && size.height <= 980{
-        //            return self
-        //        }
-        let formar = UIGraphicsImageRendererFormat()
-        formar.scale = 1
-        let renderer = UIGraphicsImageRenderer(size: rect.size,format: formar)
-        
-        let image = renderer.image { context in
-            self.draw(in: .init(origin: .zero, size: rect.size))
-        }
-        
-        return image
-    }
-    
-    func resize512()-> UIImage?{
-        // Removed condition for size less than 980 in order to always make sticker 512 by 512
-        var rect = AVMakeRect(aspectRatio: self.size, insideRect: .init(origin: .zero, size: .init(width: 512, height: 512))).integral
-        rect.size.width = rect.width.truncatingRemainder(dividingBy: 2) == 0 ? rect.width : rect.width - 1
-        rect.size.height = rect.height.truncatingRemainder(dividingBy: 2) == 0 ? rect.height : rect.height - 1
-        let formar = UIGraphicsImageRendererFormat()
-        formar.scale = 1
-        let renderer = UIGraphicsImageRenderer(size: rect.size,format: formar)
-        
-        let image = renderer.image { context in
-            self.draw(in: .init(origin: .zero, size: rect.size))
-        }
-        
-        return image
-    }
-    
-    func resizeImage(targetSize: CGSize) -> UIImage? {
-        let size = self.size
-        
-        let widthRatio  = targetSize.width  / size.width
-        let heightRatio = targetSize.height / size.height
-        
-        // Figure out what our orientation is, and use that to form the rectangle
-        var newSize: CGSize
-        if(widthRatio > heightRatio) {
-            newSize = CGSize(width: size.width * heightRatio, height: size.height * heightRatio)
-        } else {
-            newSize = CGSize(width: size.width * widthRatio, height: size.height * widthRatio)
-        }
-        
-        // This is the rect that we've calculated out and this is what is actually used below
-        var rect = CGRect(origin: .zero, size: newSize).integral
-        rect.size.width = rect.width.truncatingRemainder(dividingBy: 2) == 0 ? rect.width : rect.width - 1
-        rect.size.height = rect.height.truncatingRemainder(dividingBy: 2) == 0 ? rect.height : rect.height - 1
-        // Actually do the resizing to the rect using the ImageContext stuff
-        UIGraphicsBeginImageContextWithOptions(newSize, false, 1.0)
-        self.draw(in: rect)
-        let newImage = UIGraphicsGetImageFromCurrentImageContext()
-        UIGraphicsEndImageContext()
-        
-        return newImage
-    }
-    
-    func resize(size : CGSize, scale : CGFloat = UIScreen.main.scale)-> UIImage{
-        var rect = AVMakeRect(aspectRatio: self.size, insideRect: .init(origin: .zero, size: size)).integral
-        rect.size.width = rect.width.truncatingRemainder(dividingBy: 2) == 0 ? rect.width : rect.width - 1
-        rect.size.height = rect.height.truncatingRemainder(dividingBy: 2) == 0 ? rect.height : rect.height - 1
-        let formar = UIGraphicsImageRendererFormat()
-        formar.scale = scale
-        let renderer = UIGraphicsImageRenderer(size: rect.size,format: formar)
-        
-        let image = renderer.image { context in
-            self.draw(in: .init(origin: .zero, size: rect.size))
-        }
-        
-        return image
-    }
-    func aspectFill(size: CGSize, scale: CGFloat = UIScreen.main.scale) -> UIImage {
-        // Calculate the scaling ratio for aspect fill
-        let widthRatio = size.width / self.size.width
-        let heightRatio = size.height / self.size.height
-        let scaleFactor = max(widthRatio, heightRatio)
-        
-        // Calculate the new size that maintains the aspect ratio
-        let scaledSize = CGSize(width: self.size.width * scaleFactor, height: self.size.height * scaleFactor)
-        
-        // Set up the renderer with the specified scale
-        let format = UIGraphicsImageRendererFormat()
-        format.scale = scale
-        let renderer = UIGraphicsImageRenderer(size: size, format: format)
-        
-        // Render the image with aspect fill
-        let image = renderer.image { context in
-            // Calculate the origin to center the image
-            let origin = CGPoint(
-                x: (size.width - scaledSize.width) / 2,
-                y: (size.height - scaledSize.height) / 2
-            )
-            self.draw(in: CGRect(origin: origin, size: scaledSize))
-        }
-        
-        return image
-    }
-    ///this resize dont care about aspect ratio
-    ///just resize into target size
-    func resize(to size : CGSize, scale : CGFloat = UIScreen.main.scale)-> UIImage{
-        // Set up the renderer with the specified scale
-        let format = UIGraphicsImageRendererFormat()
-        format.scale = scale
-        let renderer = UIGraphicsImageRenderer(size: size, format: format)
-        
-        // Render the image with aspect fill
-        let image = renderer.image { context in
-            
-            self.draw(in: CGRect(origin: .zero, size: size))
-        }
-        
-        return image
-    }
-}
-public extension UIImage{
-    @discardableResult
-    func writePNG(to : URL? = nil) throws -> URL{
-        var url : URL
-        if let to = to{
-            url = to
-        }else{
-            let saveUrl = FileManager.default.temporaryDirectory.appendingPathComponent("\(UUID().uuidString).png")
-            url = saveUrl
-        }
-        //let resizeImage = self.resize980()
-        let data = self.pngData()
-        try data?.write(to: url,options: .atomic)
-        return url
-    }
-    
-    func resize980()-> UIImage?{
-        // Removed condition for size less than 980 in order to always make sticker 980 by 980
-        var rect = AVMakeRect(aspectRatio: self.size, insideRect: .init(origin: .zero, size: .init(width: 980, height: 980))).integral
-        rect.size.width = rect.width.truncatingRemainder(dividingBy: 2) == 0 ? rect.width : rect.width - 1
-        rect.size.height = rect.height.truncatingRemainder(dividingBy: 2) == 0 ? rect.height : rect.height - 1
-        if size.width <= 980 && size.height <= 980{
-            return self
-        }
-        let formar = UIGraphicsImageRendererFormat()
-        formar.scale = 1
-        let renderer = UIGraphicsImageRenderer(size: rect.size,format: formar)
-        
-        let image = renderer.image { context in
-            self.draw(in: .init(origin: .zero, size: rect.size))
-        }
-        
-        return image
-    }
-    
-    func trimmed() -> UIImage {
-        let newRect = cropRect()
-        if let imageRef = cgImage?.cropping(to: newRect.applying(CGAffineTransform(scaleX: 1.03, y: 1.03))) {
-            return UIImage(cgImage: imageRef)
-        }
-        return self
-    }
-    
-    func cropRect() -> CGRect {
-        guard let cgImage = self.cgImage
-        else {
-            return CGRect(origin: .zero, size: size)
-        }
-        
-        let bitmapBytesPerRow = cgImage.width * 4
-        let bitmapByteCount = bitmapBytesPerRow * cgImage.height
-        let colorSpace = CGColorSpaceCreateDeviceRGB()
-        let bitmapData = malloc(bitmapByteCount)
-        
-        if bitmapData == nil {
-            return CGRect(x: 0, y: 0, width: 0, height: 0)
-        }
-        
-        guard let context = CGContext(
-            data: bitmapData,
-            width: cgImage.width,
-            height: cgImage.height,
-            bitsPerComponent: 8,
-            bytesPerRow: bitmapBytesPerRow,
-            space: colorSpace,
-            bitmapInfo: CGImageAlphaInfo.premultipliedFirst.rawValue
-        ) else {
-            return CGRect(origin: .zero, size: size)
-        }
-        
-        let height = cgImage.height
-        let width = cgImage.width
-        
-        let rect = CGRect(x: 0, y: 0, width: width, height: height)
-        context.clear(rect)
-        context.draw(cgImage, in: rect)
-        
-        guard let data = context.data else {
-            return CGRect(x: 0, y: 0, width: 0, height: 0)
-        }
-        
-        var lowX = width
-        var lowY = height
-        var highX: Int = 0
-        var highY: Int = 0
-        
-        // Filter through data and look for non-transparent pixels.
-        for y in 0..<height {
-            for x in 0..<width {
-                let pixelIndex = (width * y + x) * 4 /* 4 for A, R, G, B */
-                let color = data.load(fromByteOffset: pixelIndex, as: UInt32.self)
-                
-                if color != 0 { // Alpha value is not zero pixel is not transparent.
-                    if x < lowX {
-                        lowX = x
-                    }
-                    if x > highX {
-                        highX = x
-                    }
-                    if y < lowY {
-                        lowY = y
-                    }
-                    if y > highY {
-                        highY = y
-                    }
-                }
-            }
-        }
-        
-        return CGRect(x: lowX, y: lowY, width: highX - lowX, height: highY - lowY)
-    }
-    
-    static func image(from layer: CALayer) -> UIImage? {
-        let renderer = UIGraphicsImageRenderer(size: layer.frame.size)
-        let image = renderer.image { _ in
-            layer.render(in: UIGraphicsGetCurrentContext()!)
-        }
-        return image
     }
 }

@@ -20,9 +20,6 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         NetworkManager.sharedInstance.requestForGetStickersData(completion: nil)
         
         GiphyAPIManager.shared.fetchGIFCategories { categories in
-            for category in categories {
-                GiphyInfo.append(GiphyInfoModel(category: category))
-            }
             GiphyAPIManager.shared.batchRequest(infoList: categories) { result in
                 GiphyInfo = result
                 print(result.count)

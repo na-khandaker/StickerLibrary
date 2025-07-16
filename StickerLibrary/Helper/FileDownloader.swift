@@ -42,11 +42,11 @@ class FileDownloader {
         }
     }
     
-    static func loadFileAsync(url: URL,folderName: String, completion: @escaping (String?, Error?) -> Void)
+    static func loadFileAsync(url: URL,folderName: String, uniqueID: String = "",completion: @escaping (String?, Error?) -> Void)
     {
         let documentsUrl =  FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
         
-        let stickerFileUrl = SMFileManager.shared.getFileURL(for: "Stickers/\(folderName)/\(url.lastPathComponent)")!
+        let stickerFileUrl = SMFileManager.shared.getFileURL(for: "Stickers/\(folderName)/\(uniqueID + url.lastPathComponent)")!
         let destinationUrl = stickerFileUrl
 
         print("destinationUrl",destinationUrl)

@@ -39,8 +39,9 @@ class StickerVC: UIViewController, SMSegmentedControlDelegate {
     
     var stickerObject: StickerPackResponse?
     var stickerCollections: [StickerItem] = []
-    var gifyList: [GiphyGIFModel] = []
-    var ghipyCategories: [GiphyCategory] = []
+    
+//    var gifyList: [GiphyGIFModel] = []
+//    var ghipyCategories: [GiphyCategory] = []
     
     var selectedType: StickerVCTypeState = .sticker
     
@@ -59,12 +60,10 @@ class StickerVC: UIViewController, SMSegmentedControlDelegate {
         super.viewDidLoad()
         
         configureGhipyCategory()
-        
         segmentControlView.numberOfSegments = 3
         segmentControlView.segmentsTitle = "STATIC,ANIMATED,GIPHY"
         segmentControlWidthConstraint.constant = 300
-        
-        
+    
         segmentControlView.delegate = self
         
         stickerTitleView.layer.cornerRadius = 14
@@ -76,9 +75,21 @@ class StickerVC: UIViewController, SMSegmentedControlDelegate {
             requestForStickerData()
         }
         
+        
+        
         Reachability.shared.whenReachable = { [weak self] _ in
             guard let self = self else { return }
             self.requestForStickerData()
+            if GiphyInfo.count == 0 {
+                GiphyAPIManager.shared.fetchGIFCategories { categories in
+                    GiphyAPIManager.shared.batchRequest(infoList: categories) { result in
+                        GiphyInfo = result
+                        print(result.count)
+                    }
+                } error: { error in
+                    print(error)
+                }
+            }
         }
     }
     
@@ -94,12 +105,13 @@ class StickerVC: UIViewController, SMSegmentedControlDelegate {
     }
     
     func configureGhipyCategory() {
-        ghipyCategories = loadCachedGIFCategories()
+        let ghipyCategories = loadCachedGIFCategories()
         if ghipyCategories.isEmpty {
             GiphyAPIManager.shared.fetchGIFCategories { categories in
-                self.ghipyCategories = categories
-                self.stickerPageViewController?.ghipyCategories = categories
-                
+                GiphyAPIManager.shared.batchRequest(infoList: categories) { result in
+                    GiphyInfo = result
+                    print(result.count)
+                }
             } error: { error in
                 print(error)
             }
@@ -181,11 +193,6 @@ class StickerVC: UIViewController, SMSegmentedControlDelegate {
         
         stickerPageViewController?.type = selectedType
         
-        /*
-         stickerPageViewController?.packInfo = packInfo
-         stickerPageViewController?.stickerInfo = stickerInfo
-         */
-        
         let isAnimating = selectedType == .animatedSticker
         stickerCollections = getStickerCollections(isAnimating: isAnimating)
         stickerPageViewController?.animatedStickers = stickerCollections
@@ -202,12 +209,15 @@ class StickerVC: UIViewController, SMSegmentedControlDelegate {
         
         self.currentSelected = selection
         DispatchQueue.main.async {
+            if GiphyInfo.count > 0 {
+                GiphyAPIManager.shared.setSearch(key: GiphyInfo[0].category.nameEncoded ?? "", offest: GiphyInfo[0].offset, totalCount: GiphyInfo[0].totalCount)
+            }
             self.stickerPageViewController?.jumpToPage(at: selection, direction: direction, isAnimated: direction != nil)
             self.stickerCategoryCollectionView.reloadData()
             
             switch self.selectedType {
             case .giphy:
-                if self.gifyList.count > 0 {
+                if GiphyInfo.count > 0 {
                     self.stickerCategoryCollectionView.selectItem(at: IndexPath(row: selection, section: 0), animated: false, scrollPosition: .centeredHorizontally)
                 }
             default:
@@ -215,17 +225,6 @@ class StickerVC: UIViewController, SMSegmentedControlDelegate {
                     self.stickerCategoryCollectionView.selectItem(at: IndexPath(row: selection, section: 0), animated: false, scrollPosition: .centeredHorizontally)
                 }
             }
-        }
-    }
-    
-    func fetchMyPacks() {
-        GiphyAPIManager.shared.fetchTrendingGiphy(type: .sticker) { [weak self] result in
-            guard let self = self else { return }
-            print(result.count)
-            self.gifyList = result
-            stickerPageViewController?.gifyList = gifyList
-        } error: { message in
-            
         }
     }
     
@@ -264,10 +263,8 @@ class StickerVC: UIViewController, SMSegmentedControlDelegate {
     override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
         if segue.identifier == "PageVC" {
             
-            fetchMyPacks()
             stickerPageViewController = segue.destination as? StickerPageViewController
             stickerPageViewController?.pageDelegate = self
-            stickerPageViewController?.gifyList = gifyList
             stickerPageViewController?.animatedStickers = getStickerCollections(isAnimating: true)
         }
     }
@@ -320,9 +317,8 @@ extension StickerVC: UICollectionViewDataSource, UICollectionViewDelegate {
                 
                 if let items =  GiphyInfo[indexPath.row].items {
                     if items.count > 0 {
-                        GiphyAPIManager.shared.setSearch(key: ghipyCategories[indexPath.row].nameEncoded ?? "", offest: GiphyInfo[indexPath.row].offset, totalCount: GiphyInfo[indexPath.row].totalCount)
-                        self.gifyList = items
-                        self.stickerPageViewController?.gifyList = self.gifyList
+                        GiphyAPIManager.shared.setSearch(key: GiphyInfo[indexPath.row].category.nameEncoded ?? "", offest: GiphyInfo[indexPath.row].offset, totalCount: GiphyInfo[indexPath.row].totalCount)
+//                        self.stickerPageViewController?.gifyList = items
                         self.stickerPageViewController?.jumpToPage(at: indexPath.row)
                         
                     } else {
@@ -330,8 +326,7 @@ extension StickerVC: UICollectionViewDataSource, UICollectionViewDelegate {
                         GiphyAPIManager.shared.searchGiphy(searchKeyWord: GiphyInfo[indexPath.row].category.nameEncoded ?? "") { result in
                             if let index = GiphyInfo.firstIndex(where: { $0.category.nameEncoded == GiphyInfo[indexPath.row].category.nameEncoded }) {
                                 GiphyInfo[index].items = result
-                                self.gifyList = result
-                                self.stickerPageViewController?.gifyList = self.gifyList
+//                                self.stickerPageViewController?.gifyList = result
                                 DispatchQueue.main.async {
                                     SVProgressHUD.dismiss()
                                     self.stickerPageViewController?.jumpToPage(at: indexPath.row)

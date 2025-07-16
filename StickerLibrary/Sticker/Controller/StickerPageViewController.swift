@@ -19,8 +19,9 @@ class StickerPageViewController: UIPageViewController {
     var currentIndex = -1
     var animatedStickers: [StickerItem] = []
     var type: StickerVCTypeState = .sticker
-    var gifyList: [GiphyGIFModel] = []
-    var ghipyCategories: [GiphyCategory] = []
+    
+//    var gifyList: [GiphyGIFModel] = []
+//    var ghipyCategories: [GiphyCategory] = []
 //    var stickerInfo: [[StickerInfo]] = []
     
     weak var pageDelegate: StickerPageViewControllerDelegate?
@@ -59,7 +60,7 @@ class StickerPageViewController: UIPageViewController {
         switch type {
             
         case .giphy:
-            if self.gifyList.count == 0 || index >= GiphyInfo.count {
+            if GiphyInfo.count == 0 || index >= GiphyInfo.count {
                 guard let emptyVC = storyboard?.instantiateViewController(withIdentifier: "NoStickerVC") else {
                     return nil
                 }
@@ -99,7 +100,7 @@ extension StickerPageViewController: UIPageViewControllerDataSource, UIPageViewC
         switch type {
             
             case .giphy:
-                return gifyList.count == 0 ? 1 : gifyList.count
+                return GiphyInfo.count == 0 ? 1 : GiphyInfo.count
            default:
             return animatedStickers.count == 0 ? 1 : animatedStickers.count
         }
@@ -118,7 +119,7 @@ extension StickerPageViewController: UIPageViewControllerDataSource, UIPageViewC
         var totalVC = 0
         switch type {
             case .giphy:
-                totalVC = gifyList.count
+                totalVC = GiphyInfo.count
             default:
                 totalVC = animatedStickers.count
         }
@@ -159,9 +160,7 @@ extension StickerPageViewController: UIPageViewControllerDataSource, UIPageViewC
         index += 1
         switch type {
         case .giphy:
-//            return nil
-
-            if (index == gifyList.count) {
+            if (index == GiphyInfo.count) {
                 return nil
             }
              
