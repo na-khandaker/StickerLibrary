@@ -26,7 +26,7 @@
                                 <state key="normal" title="Button"/>
                                 <buttonConfiguration key="configuration" style="filled" title="Open"/>
                                 <connections>
-                                    <segue destination="oEl-QQ-2Th" kind="presentation" id="37U-hA-jw9"/>
+                                    <action selector="tappedOnStikerButton:" destination="BYZ-38-t0r" eventType="touchUpInside" id="YVl-rp-8Y1"/>
                                 </connections>
                             </button>
                         </subviews>
@@ -37,10 +37,13 @@
                             <constraint firstItem="6Tk-OE-BBY" firstAttribute="bottom" secondItem="sZV-cj-wO0" secondAttribute="bottom" constant="70" id="bGe-0X-IkI"/>
                         </constraints>
                     </view>
+                    <connections>
+                        <segue destination="oEl-QQ-2Th" kind="presentation" identifier="StickerVC" id="4A8-DA-K5L"/>
+                    </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="dkx-z0-nzr" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="35.877862595419849" y="-17.605633802816904"/>
+            <point key="canvasLocation" x="30" y="-30"/>
         </scene>
         <!--Sticker-->
         <scene sceneID="GrQ-Cr-EYd">

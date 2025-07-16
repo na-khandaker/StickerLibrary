@@ -14,8 +14,8 @@ protocol SMDismissViewControllerProtocol{
 }
 
 protocol StickerVCDelegate: AnyObject,SMDismissViewControllerProtocol {
-    func addSticker(from stickerURLs: [String], controller: StickerVC)
-    func showPurchasePage() 
+    func isPurchased()-> Bool
+    func showPurchasePage(from parentVC: StickerVC)
     func didSelectStickerItem(with stickerImage: UIImage, url: URL, isAnimated: Bool)
 }
 
@@ -39,18 +39,17 @@ class StickerVC: UIViewController, SMSegmentedControlDelegate {
     
     var stickerObject: StickerPackResponse?
     var stickerCollections: [StickerItem] = []
-    
-//    var gifyList: [GiphyGIFModel] = []
-//    var ghipyCategories: [GiphyCategory] = []
-    
     var selectedType: StickerVCTypeState = .sticker
     
     private var currentSelected: Int = 0
     private var staticStickerSelected: Int = 0
     private var animatedStickerSelected: Int = 0
     private var giphyStickerSelected: Int = 0
-    
     weak var stickerPageViewController: StickerPageViewController?
+    
+    private var isPurchasedUser : Bool {
+        return delegate?.isPurchased() ?? false
+    }
     
     deinit{
         print(#function,#file,"addasdasdasda deinti")
@@ -74,8 +73,6 @@ class StickerVC: UIViewController, SMSegmentedControlDelegate {
         } else {
             requestForStickerData()
         }
-        
-        
         
         Reachability.shared.whenReachable = { [weak self] _ in
             guard let self = self else { return }
@@ -130,19 +127,7 @@ class StickerVC: UIViewController, SMSegmentedControlDelegate {
             return []
         }
     }
-    
-    func fetchItemsInGiphyCategory(categories: [GiphyCategory]) {
-        for category in categories {
-            if let categoryName = category.name {
-//                GiphyAPIManager.shared.searchGiphy(searchKeyWord: categoryName) { items in
-//                    GiphyInfo.append(GiphyInfoModel(keywords: category, items: items))
-//                } error: { error in
-//                    
-//                }
-            }
-        }
-    }
-    
+        
     func didTapSegment(_ idx: Int) {
         print(idx)
         
@@ -230,8 +215,6 @@ class StickerVC: UIViewController, SMSegmentedControlDelegate {
     
     func getStickerCollections(isAnimating: Bool)-> [StickerItem] {
         
-        //        let collections = isAnimating ? stickerObject?.items.filter { $0.isAnimated } ? stickerObject?.items.filter { !$0.isAnimated }
-        
         if isAnimating {
             return stickerObject?.items?.filter { $0.isAnimated ?? false } ?? [StickerItem]()
         } else {
@@ -245,12 +228,7 @@ class StickerVC: UIViewController, SMSegmentedControlDelegate {
                 let decoder = JSONDecoder()
                 let data = result.data(using: .utf8)!
                 let response = try decoder.decode(StickerPackResponse.self, from: data)
-                //                let nonAnimatingItems = response.items.filter { !$0.isAnimated }
-                //                let newResponse = StickerPackResponse(status: response.status, assetBaseURL: response.assetBaseURL, items: nonAnimatingItems, nextPage: response.nextPage)
                 stickerObject = response
-                for allItems in response.items! {
-                    print("Animated >>",allItems.isAnimated)
-                }
                 return true
             } catch {
                 print("Sticker DECODE ERROR")
@@ -262,7 +240,6 @@ class StickerVC: UIViewController, SMSegmentedControlDelegate {
     
     override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
         if segue.identifier == "PageVC" {
-            
             stickerPageViewController = segue.destination as? StickerPageViewController
             stickerPageViewController?.pageDelegate = self
             stickerPageViewController?.animatedStickers = getStickerCollections(isAnimating: true)
@@ -288,9 +265,9 @@ extension StickerVC: UICollectionViewDataSource, UICollectionViewDelegate {
         switch selectedType {
         case .giphy:
             cell.categoryNameLabel.text = GiphyInfo[indexPath.row].category.name
-            cell.showProIcon(isPro: true)
+            cell.showProIcon(isPro: self.isPurchasedUser ? false : true)
         default :
-            cell.showProIcon(isPro: stickerCollections[indexPath.row].isPro ?? false )
+            cell.showProIcon(isPro: (self.isPurchasedUser ? false : stickerCollections[indexPath.row].isPro) ?? false)
             cell.categoryNameLabel.text = stickerCollections[indexPath.row].name?.uppercased()
         }
         return cell
@@ -348,15 +325,6 @@ extension StickerVC: UICollectionViewDataSource, UICollectionViewDelegate {
 
 extension StickerVC: UICollectionViewDelegateFlowLayout {
     
-    //    func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
-    //
-    //        let nameText = stickerObject?.items[indexPath.row].name ?? "String"
-    //        var size = " \(nameText) ".size(withAttributes: nil)
-    //        size.width = size.width + 22
-    //        size.height = stickerCategoryCollectionView.bounds.height
-    //        return size
-    //    }
-    
     func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, minimumInteritemSpacingForSectionAt section: Int) -> CGFloat {
         return 0
     }
@@ -373,12 +341,13 @@ extension StickerVC: UICollectionViewDelegateFlowLayout {
 
 extension StickerVC: StickerPageViewControllerDelegate {
     
-    func showPurchasePage() {
-        self.dismiss(animated: true) {
-            self.delegate?.showPurchasePage()
-        }
+    func isPurchased() -> Bool {
+        self.isPurchasedUser
     }
-    
+
+    func showPurchasePage() {
+        delegate?.showPurchasePage(from: self)
+    }
     
     func getSticker(from stickerURLs: [String]) {
         

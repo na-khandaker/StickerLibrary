@@ -12,19 +12,20 @@ protocol StickerPageViewControllerDelegate: AnyObject {
     func getSticker(from stickerURLs: [String])
     func didSelectStickerItem(withImage image: UIImage, url: URL, isAnimated: Bool)
     func showPurchasePage()
+    func isPurchased()-> Bool
 }
 
 class StickerPageViewController: UIPageViewController {
-    
+   
     var currentIndex = -1
     var animatedStickers: [StickerItem] = []
     var type: StickerVCTypeState = .sticker
     
-//    var gifyList: [GiphyGIFModel] = []
-//    var ghipyCategories: [GiphyCategory] = []
-//    var stickerInfo: [[StickerInfo]] = []
-    
     weak var pageDelegate: StickerPageViewControllerDelegate?
+    
+    private var isPurchasedUser : Bool {
+        return pageDelegate?.isPurchased() ?? false
+    }
 
     deinit{
         print(#function,#file,"addasdasdasda deinti")
@@ -177,6 +178,10 @@ extension StickerPageViewController: UIPageViewControllerDataSource, UIPageViewC
 //MARK: - StickerPackCollectionVCDelegate
 
 extension StickerPageViewController: StickerPackCollectionVCDelegate {
+    func isPurchased() -> Bool {
+        self.isPurchasedUser
+    }
+    
     func showPurchasePage() {
         self.pageDelegate?.showPurchasePage()
     }

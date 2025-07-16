@@ -7,13 +7,37 @@
 
 import UIKit
 
-class ViewController: UIViewController {
+class ViewController: UIViewController, StickerVCDelegate {
+    
+    func showPurchasePage(from parentVC: StickerVC) {
+        
+    }
+    
+    func isPurchased() -> Bool {
+        false
+    }
+    
+    func didSelectStickerItem(with stickerImage: UIImage, url: URL, isAnimated: Bool) {
+        print(">>>> ",url)
+    }
+    
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        // Do any additional setup after loading the view.
+      
+    }
+    
+    override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
+        if segue.identifier == "StickerVC" {
+            if let stickerVC = segue.destination as? StickerVC {
+                stickerVC.delegate = self
+            }
+        }
     }
 
-
+    @IBAction func tappedOnStikerButton(_ sender: UIButton) {
+        performSegue(withIdentifier: "StickerVC", sender: nil)
+    }
+    
 }
 

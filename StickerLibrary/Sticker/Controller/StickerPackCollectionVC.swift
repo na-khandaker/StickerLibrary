@@ -18,7 +18,7 @@ enum GiphyDownloadError: Error {
 }
 
 protocol StickerPackCollectionVCDelegate: AnyObject {
-    
+    func isPurchased()-> Bool
     func didSelectStickerItem(with stickerImage: UIImage, url: URL, isAnimated: Bool)
     func showPurchasePage()
 }
@@ -30,12 +30,15 @@ class StickerPackCollectionVC: UICollectionViewController, UICollectionViewDeleg
     
     var stickerItem: StickerItem?
     var type: StickerVCTypeState = .sticker
-    //    var packInfo: PackInfo?
+
     var gifyList: [GiphyGIFModel] = []
-    //
     weak var delegate: StickerPackCollectionVCDelegate?
     
     private var subscriptions: Set<AnyCancellable> = []
+    
+    private var isPurchasedUser : Bool {
+        return delegate?.isPurchased() ?? false
+    }
     
     private enum Constants {
         static let interItemSpacing: CGFloat = UIDevice.current.userInterfaceIdiom == .pad ? 17.0 : 8.0
@@ -123,27 +126,36 @@ class StickerPackCollectionVC: UICollectionViewController, UICollectionViewDeleg
         }
         return cell
     }
-    
-    override func collectionView(_ collectionView: UICollectionView, shouldDeselectItemAt indexPath: IndexPath) -> Bool {
-        #warning("Check is Purchase & Pro ITEM")
-//        let isPurchased = false
-//      
-//        if sticker.isPro ?? false  && !isPurchased {
-//            self.delegate?.showPurchasePage()
-//            return
-//        }
-        return true
-
+    override func collectionView(_ collectionView: UICollectionView, shouldSelectItemAt indexPath: IndexPath) -> Bool {
+        
+        if isPurchasedUser {
+            return true
+        } else {
+            switch type {
+            case .giphy:
+                delegate?.showPurchasePage()
+                return false
+            default:
+                if let stickerItem {
+                    if stickerItem.isPro ?? false {
+                        delegate?.showPurchasePage()
+                        return false
+                    } else {
+                        return true
+                    }
+                }
+            }
+            return true
+        }
     }
-    
     
     override func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
         var stickerFileUrl: URL = URL(fileURLWithPath: "")
         var isAnimated = true
        
         switch type {
-        case .giphy:
             
+        case .giphy:
             guard let path = gifyList[indexPath.row].images?.original?.url else { return }
             
             if  Reachability.shared.connection == .unavailable {
@@ -190,57 +202,6 @@ class StickerPackCollectionVC: UICollectionViewController, UICollectionViewDeleg
                 self.delegate?.didSelectStickerItem(with: UIImage(contentsOfFile: stickerFileUrl.path)!, url: stickerFileUrl, isAnimated: isAnimated)
             }
         }
-//        self.delegate?.didSelectStickerItem(with: UIImage(contentsOfFile: stickerFileUrl.path)!, url: stickerFileUrl, isAnimated: isAnimated)
-
-//        else if type == .giphy, let sticker = stickerInfo[indexPath.row].sticker {
-//            stickerFileUrl = SMFileManager.shared.getFilePathForGroup(with: sticker)!
-//        } else {
-//            SVProgressHUD.dismiss()
-//            // BFToast.show(inViewCenter: "Make sure you have internet connection and try again.", after: 0.0, delay: 0.0, disappeared: nil)
-//            self.view.isUserInteractionEnabled = true
-//            return
-//        }
-//        var imageArray: [String] = []
-//        if let data = try? Data(contentsOf: stickerFileUrl), let image = YYImage(data: data) {
-//            let frameCount = Double(image.animatedImageFrameCount())
-//            if frameCount > 0 {
-//                let interval = frameCount > 30.0 ? ceil(frameCount / 30.0) : 1
-//                let folder = FileManager.default.createFolderInTemporary(with: "stickerMaker-\(UUID().uuidString)")
-//                for i in stride(from: 0, to: frameCount, by: interval) {
-//                    if let frame = image.animatedImageFrame(at: UInt(i)) {
-//                        let url = FileManager.default.getImageURL(for: "image_\(UUID().uuidString).png", folder: folder)
-//                        do {
-//                            if let resizedFrame = frame.resize512() {
-//                                try resizedFrame.writePNG(to: url, shouldResize: false)
-//                                imageArray.append(url.path)
-//                            }
-//                        } catch {
-//                            print(error)
-//                        }
-//                    }
-//                }
-//            } else {
-//                do {
-//                    let folder = FileManager.default.createFolderInTemporary(with: "stickerMaker-\(UUID().uuidString)")
-//                    let url = FileManager.default.getImageURL(for: "image_\(UUID().uuidString).png", folder: folder)
-//                    try image.writePNG(to: url, shouldResize: false)
-//                    imageArray = [url.path]
-//                } catch {
-//                    print(error)
-//                }
-//            }
-//        }
-//        guard imageArray.count > 0 else {
-//            SVProgressHUD.dismiss()
-//            // BFToast.show(inViewCenter: "Make sure you have internet connection and try again.", after: 0.0, delay: 0.0, disappeared: nil)
-//            self.view.isUserInteractionEnabled = true
-//            return
-//        }
-//        DispatchQueue.main.async {
-//            self.delegate?.fetchSticker(from: imageArray)
-//        }
-        
-        
     }
     
     func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
@@ -318,6 +279,30 @@ class StickerPackCollectionVC: UICollectionViewController, UICollectionViewDeleg
             self.isProcessing = false
         }
     }
+    
+//    func isPremium(type: StickerVCTypeState) {
+//        
+//        if isPro {
+//            //all
+//        }
+//        switch type {
+//            
+//        case .giphy:
+//            // return false
+//            
+//        default:
+//            
+//            if let stickerItem {
+//                if stickerItem.isPro {
+//                    // return false
+//                } else {
+//                    // return true
+//                }
+//            }
+//            
+//        }
+//        
+//    }
 }
 
 
