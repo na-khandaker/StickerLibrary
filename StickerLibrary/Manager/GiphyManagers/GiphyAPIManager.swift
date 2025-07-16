@@ -44,7 +44,7 @@ final class GiphyAPIManager {
 
     // MARK: - Public API
 
-    func setSearch(key : String,type : GIFType = .gif,offest : Int, totalCount : Int){
+    func setSearch(key : String,type : GIFType = .sticker,offest : Int, totalCount : Int){
         self.fetchTrigger = nil
         self.searchItem = .init(keyword: key, type: type, isNextPage: true, offset: offset,totalCount: totalCount)
     }
@@ -66,7 +66,7 @@ final class GiphyAPIManager {
     }
 
     func fetchTrendingGiphy(
-        type: GIFType = .gif,
+        type: GIFType = .sticker,
         isNext: Bool = false,
         offset: Int = 0,
         complete: @escaping ([GiphyGIFModel]) -> Void,
@@ -79,7 +79,7 @@ final class GiphyAPIManager {
 
     func searchGiphy(
         searchKeyWord: String,
-        type: GIFType = .gif,
+        type: GIFType = .sticker,
         isNext: Bool = false,
         complete: @escaping ([GiphyGIFModel]) -> Void,
         error: @escaping (String) -> Void

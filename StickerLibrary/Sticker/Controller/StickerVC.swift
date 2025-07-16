@@ -323,7 +323,7 @@ extension StickerVC: UICollectionViewDataSource, UICollectionViewDelegate {
                         
                     } else {
                         SVProgressHUD.show(withStatus: "fetching giphy...")
-                        GiphyAPIManager.shared.searchGiphy(searchKeyWord: GiphyInfo[indexPath.row].category.nameEncoded ?? "") { result in
+                        GiphyAPIManager.shared.searchGiphy(searchKeyWord: GiphyInfo[indexPath.row].category.nameEncoded ?? "", type: .sticker) { result in
                             if let index = GiphyInfo.firstIndex(where: { $0.category.nameEncoded == GiphyInfo[indexPath.row].category.nameEncoded }) {
                                 GiphyInfo[index].items = result
 //                                self.stickerPageViewController?.gifyList = result

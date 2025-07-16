@@ -51,7 +51,7 @@ class GiphyAPIService: NSObject {
         }
     }
     
-    internal var gifType : GIFType = .gif
+    internal var gifType : GIFType = .sticker
     private var currentOffset : Int = 0
     
     @available(iOSApplicationExtension 13.0, *)
